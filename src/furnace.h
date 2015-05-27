@@ -2,7 +2,7 @@
 #define FURNACE_H
 
 #include <QObject>
-#include <QTime>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QSettings>
 #include "tercon.h"
@@ -33,6 +33,7 @@ public:
     Covers * getCovers();
     SafetyValve * getSafetyValve();
     SampleLock * getSampleLock();
+    QElapsedTimer * getElapsedTimer();
     static Furnace * instance();
     
 signals:
@@ -94,8 +95,8 @@ private:
     DAC * dac;
     ADC * adc;
     Diagnostic * m_diagnostic;
-    QTime * time;
-    QTime * workingTimeCalibrHeater;
+    QElapsedTimer * time;
+    QElapsedTimer * workingTimeCalibrHeater;
     static Furnace * g_furnace;
     
 };

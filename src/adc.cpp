@@ -28,7 +28,7 @@ ADC::~ADC(){
     delete ltr27;
 }
 
-void ADC::setTime(QTime *time){
+void ADC::setTime(QElapsedTimer *time){
     m_Time = time;
 }
 

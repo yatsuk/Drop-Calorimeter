@@ -1,5 +1,4 @@
 ﻿#include "furnace.h"
-//#include "serialportinfo.h"
 #include <math.h>
 #include <QDebug>
 
@@ -15,8 +14,8 @@ Furnace::Furnace(QObject *parent) :
     dataRecorder = new DataRecorder(this);
     dataRecorder->writeFile("Time\tDeviceNumber\tNChannel\tValue\r\n",Shared::dataFile);
 
-    time = new QTime();
-    workingTimeCalibrHeater = new QTime();
+    time = new QElapsedTimer();
+    workingTimeCalibrHeater = new QElapsedTimer();
 
     regulatorOfFurnace = new Regulator(this);
     regulatorOfThermostat = new Regulator(this);
@@ -43,6 +42,11 @@ Furnace::Furnace(QObject *parent) :
 Furnace * Furnace::instance()
 {
     return g_furnace;
+}
+
+QElapsedTimer * Furnace::getElapsedTimer()
+{
+    return time;
 }
 
 void Furnace::startTercon(){
@@ -309,6 +313,7 @@ SampleLock * Furnace::getSampleLock()
 }
 
 void Furnace::run(){
+    time->start();
 
     connect (ltr43,SIGNAL(calibrationHeaterOff()),
              this,SIGNAL(calibrationHeaterOff()));
@@ -356,48 +361,48 @@ void Furnace::run(){
     connect(ltr43,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
     connect(ltr43,SIGNAL(readPortsSignal(DWORD)),
-           covers,SLOT(statusPortLtr43(DWORD)));
+            covers,SLOT(statusPortLtr43(DWORD)));
     connect(ltr43,SIGNAL(readPortsSignal(DWORD)),
-           safetyValve,SLOT(statusPortLtr43(DWORD)));
+            safetyValve,SLOT(statusPortLtr43(DWORD)));
     connect(ltr43,SIGNAL(readPortsSignal(DWORD)),
-           sampleLock,SLOT(statusPortLtr43(DWORD)));
+            sampleLock,SLOT(statusPortLtr43(DWORD)));
 
     connect(sampleLock,SIGNAL(dropEnableSignal(bool)),
-           safetyValve,SLOT(setRemoteDropEnable(bool)));
+            safetyValve,SLOT(setRemoteDropEnable(bool)));
     connect(safetyValve,SIGNAL(remoteDropSignal()),
-           covers,SLOT(openBottomCover()));
+            covers,SLOT(openBottomCover()));
     connect(safetyValve,SIGNAL(remoteDropSignal()),
-           covers,SLOT(openTopCover()));
+            covers,SLOT(openTopCover()));
     connect(safetyValve,SIGNAL(remoteDropCompletedSignal()),
-           covers,SLOT(closeBottomCover()));
+            covers,SLOT(closeBottomCover()));
     connect(safetyValve,SIGNAL(remoteDropCompletedSignal()),
-           covers,SLOT(closeTopCover()));
+            covers,SLOT(closeTopCover()));
 
     connect(safetyValve,SIGNAL(remoteDropSignal()),
-           sampleLock,SLOT(drop()));
+            sampleLock,SLOT(drop()));
     connect(covers,SIGNAL(openBottomCoverSignal()),
-           sampleLock,SLOT(drop()));
+            sampleLock,SLOT(drop()));
     connect(covers,SIGNAL(openTopCoverSignal()),
-           sampleLock,SLOT(drop()));
+            sampleLock,SLOT(drop()));
 
     connect(safetyValve,SIGNAL(remoteDropSignal()),
-           arduino,SLOT(setWaitDropEnable()));
+            arduino,SLOT(setWaitDropEnable()));
     connect(safetyValve,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
     connect(covers,SIGNAL(openTopCoverSignal()),
-           arduino,SLOT(waitDrop()));
+            arduino,SLOT(waitDrop()));
     connect(covers,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
     connect(sampleLock,SIGNAL(dropEnableSignal(bool)),
-           arduino,SLOT(enableLed(bool)));
+            arduino,SLOT(enableLed(bool)));
     connect(sampleLock,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
 
 
     connect(arduino,SIGNAL(droped()),
-           covers,SLOT(closeTopCover()));
+            covers,SLOT(closeTopCover()));
     connect(arduino,SIGNAL(droped()),
-           covers,SLOT(closeBottomCover()));
+            covers,SLOT(closeBottomCover()));
     connect(arduino,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
 
@@ -436,9 +441,6 @@ void Furnace::run(){
     connect(ltr114,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
 
-
-
-    time->start();
     connectTercon();
 
     dac->initializationLTR();
