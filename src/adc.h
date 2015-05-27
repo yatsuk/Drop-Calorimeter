@@ -2,7 +2,7 @@
 #define ADC_H
 
 #include <QObject>
-#include <QTime>
+#include <QElapsedTimer>
 #include <QTimer>
 #include <QVector>
 #include "parameters.h"
@@ -17,7 +17,7 @@ class ADC : public QObject
 public:
     explicit ADC(QObject *parent = 0);
     ~ADC();
-    void setTime(QTime * time);
+    void setTime(QElapsedTimer * time);
 
 signals:
     void message(const QString & msg, Shared::MessageLevel msgLevel);
@@ -36,7 +36,7 @@ private slots:
 private:
     AdcParameters parameters_;
     RegulatorParameters regparam;
-    QTime * m_Time;
+    QElapsedTimer * m_Time;
 
     double moveAverage(const QVector <double> &valueArray);
     long double convertVolt2TemperatureTypeA1(double value);
