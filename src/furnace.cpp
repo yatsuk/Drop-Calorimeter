@@ -160,16 +160,39 @@ void Furnace::terconDataReceive(TerconData data){
 }
 
 double Furnace::convertU2C(double U){
-    U+=0.384;//temperature cold = 25C
-    long double temperature=0.9643027;
-    temperature+=79.495086*U;
-    temperature-=4.9990310*pow(U,2);
-    temperature+=0.6341776*pow(U,3);
-    temperature-=4.7440967e-2*pow(U,4);
-    temperature+=2.1811337e-3*pow(U,5);
-    temperature-=5.8324228e-5*pow(U,6);
-    temperature+=8.2433725e-7*pow(U,7);
-    temperature-=4.5928480e-9*pow(U,8);
+    long double temperature=0;
+    U+=0.173;//temperature cold = 30C
+    if (U < 1.874){
+        temperature+=1.8494946E+02*U;
+        temperature-=8.00504062E+01*pow(U,2);
+        temperature+=1.0223743E+02*pow(U,3);
+        temperature-=1.52248592E+02*pow(U,4);
+        temperature+=1.88821343E+02*pow(U,5);
+        temperature-=1.59085941E+02*pow(U,6);
+        temperature+=8.2302788E+01*pow(U,7);
+        temperature-=2.34181944E+01*pow(U,8);
+        temperature+=2.7978626E+00*pow(U,9);
+    }
+    else if ((U >= 1.874) && (U < 10.332)){
+        temperature+=1.291507177E+01;
+        temperature+=1.466298863E+02*U;
+        temperature-=1.534713402E+01*pow(U,2);
+        temperature+=3.145945973E+00*pow(U,3);
+        temperature-=4.163257839E-01*pow(U,4);
+        temperature+=3.187963771E-02*pow(U,5);
+        temperature-=1.2916375E-03*pow(U,6);
+        temperature+=2.183475087E-05*pow(U,7);
+        temperature-=1.447379511E-07*pow(U,8);
+        temperature+=8.211272125E-09*pow(U,9);
+
+    } else if( U >= 10.332){
+        temperature-=-8.087801117E+01;
+        temperature+=1.621573104E+02*U;
+        temperature-=8.536869453E+00*pow(U,2);
+        temperature+=4.719686976E-01*pow(U,3);
+        temperature-=1.441693666E-02*pow(U,4);
+        temperature+=2.08161889E-04*pow(U,5);
+    }
     return temperature;
 }
 
