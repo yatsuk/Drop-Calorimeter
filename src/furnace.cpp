@@ -186,7 +186,7 @@ double Furnace::convertU2C(double U){
         temperature+=8.211272125E-09*pow(U,9);
 
     } else if( U >= 10.332){
-        temperature-=-8.087801117E+01;
+        temperature-=8.087801117E+01;
         temperature+=1.621573104E+02*U;
         temperature-=8.536869453E+00*pow(U,2);
         temperature+=4.719686976E-01*pow(U,3);
