@@ -3,7 +3,7 @@
 
 namespace Shared
 {
-enum MessageLevel{information, warning, critical, empty};
+enum MessageLevel{information, warning, critical, empty, userMessage};
 enum RegulatorMode {automatic, manual,programPower,stopCurrentTemperature, constVelocity, constValue};
 enum FileType {logFile, dataFile, regulatorFurnaceFile, regulatorThermostatFile,
                regulatorUpHeaterFile, regulatorDownHeaterFile,

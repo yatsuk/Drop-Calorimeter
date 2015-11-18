@@ -3,6 +3,8 @@
 
 #include <QWidget>
 #include <QTextEdit>
+#include <QLineEdit>
+#include <QPushButton>
 #include <QElapsedTimer>
 #include "shared.h"
 
@@ -18,8 +20,17 @@ signals:
 
 public slots:
     void appendMessage(const QString & msg, Shared::MessageLevel msgLevel);
+
+private slots:
+    void sendUserMessageButtonClicked();
+
+protected:
+    bool eventFilter(QObject * target, QEvent * event);
+
 private:
     QTextEdit * logBox;
+    QLineEdit * userMessageEdit;
+    QPushButton * sendUserMessageButton;
     QElapsedTimer * _elapsedTimer;
 };
 

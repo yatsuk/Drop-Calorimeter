@@ -15,6 +15,7 @@ Furnace::Furnace(QObject *parent) :
     dataRecorder->writeFile("Time\tDeviceNumber\tNChannel\tValue\r\n",Shared::dataFile);
 
     time = new QElapsedTimer();
+    time->start();
     workingTimeCalibrHeater = new QElapsedTimer();
 
     regulatorOfFurnace = new Regulator(this);
@@ -44,9 +45,13 @@ Furnace * Furnace::instance()
     return g_furnace;
 }
 
-QElapsedTimer * Furnace::getElapsedTimer()
+qint64 Furnace::getElapsedTime()
 {
-    return time;
+    if(time->isValid()){
+        return time->elapsed();
+    } else {
+        return 0;
+    }
 }
 
 void Furnace::startTercon(){
@@ -336,7 +341,6 @@ SampleLock * Furnace::getSampleLock()
 }
 
 void Furnace::run(){
-    time->start();
 
     connect (ltr43,SIGNAL(calibrationHeaterOff()),
              this,SIGNAL(calibrationHeaterOff()));
