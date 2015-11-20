@@ -33,7 +33,7 @@ public:
     Covers * getCovers();
     SafetyValve * getSafetyValve();
     SampleLock * getSampleLock();
-    QElapsedTimer * getElapsedTimer();
+    qint64 getElapsedTime();
     static Furnace * instance();
     
 signals:
