@@ -65,7 +65,7 @@ double Regulator::computePowerProg(double temperature){
     QwtSpline spline;
     spline.setPoints(polygon);
     return spline.value(temperature);*/
-
+    return 0;
 }
 
 double Regulator::averageValue(const QVector<double> &valueArray){

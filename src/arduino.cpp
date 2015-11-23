@@ -12,7 +12,6 @@ Arduino::Arduino(QObject *parent) :
 
 Arduino::~Arduino()
 {
-    enableLed(false);
     stopAck();
 }
 
@@ -36,6 +35,9 @@ void Arduino::delayDrop()
 
 void Arduino::enableLed(bool enable)
 {
+    if (!port->isOpen())
+        return;
+
     if (enable){
         emit message(tr("Светодиод системы детектирования пролета ампулы включен."),Shared::information);
         port->write("2\r\n");
@@ -48,14 +50,16 @@ void Arduino::enableLed(bool enable)
 void Arduino::waitDrop()
 {
     if (waitDropEnable){
-        port->write("1\r\n");
-        waitDropEnable = false;
+        if (port->isOpen()){
+            port->write("1\r\n");
+            waitDropEnable = false;
+        }
     }
 }
 
 void Arduino::setWaitDropEnable()
 {
-     waitDropEnable = true;
+    waitDropEnable = true;
 }
 
 bool Arduino::startAck(){
