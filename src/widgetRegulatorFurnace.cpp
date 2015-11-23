@@ -31,24 +31,34 @@ WidgetRegulatorFurnace::WidgetRegulatorFurnace(QWidget *parent) :
     emergencyStopButton->setToolTip(tr("Выключение ЭМ пускателя"));
     emergencyStopButton->setFont(captionFont);
     emergencyStopButton->setEnabled(false);
-    settingRegulatorButton = new QPushButton(tr("Настройка регулятора"));
+    settingRegulatorButton = new QPushButton(QIcon(":/images/Settings.ico"),"");
 
     QHBoxLayout * hButtonLayout = new QHBoxLayout;
     hButtonLayout->addWidget(startStopButton);
     hButtonLayout->addWidget(emergencyStopButton);
 
-    outPowerLabel= new QLabel(tr("Выходная мощность (%) = 0"));
+    defaultColorOn1LegIndicator = QColor(0,255,0);
+    defaultColorOn2LegIndicator = QColor(0,192,0);
+    defaultColorOff1LegIndicator = QColor(0,28,0);
+    defaultColorOff2LegIndicator = QColor(0,128,0);
+    statusLed = new QLedIndicator();
+    statusLed->setCheckable(false);
+    outPowerLabel= new QLabel(tr("Выходная мощность (%) = 0.00"));
     outPowerLabel->setFont(captionFont);
+    QHBoxLayout * outPowerAndSettingsLayout = new QHBoxLayout;
+    outPowerAndSettingsLayout->addWidget(statusLed);
+    outPowerAndSettingsLayout->addWidget(outPowerLabel);
+    outPowerAndSettingsLayout->addStretch(1);
+    outPowerAndSettingsLayout->addWidget(settingRegulatorButton);
 
     QVBoxLayout * vLayout = new QVBoxLayout;
     vLayout->addLayout(hButtonLayout);
-    vLayout->addWidget(outPowerLabel);
+    vLayout->addLayout(outPowerAndSettingsLayout);
     vLayout->addWidget(autoRegulatorWidget);
     vLayout->addWidget(manualRegulatorWidget);
     vLayout->addWidget(progPowerRegulatorWidget);
     vLayout->addWidget(diagnosticWidget);
     vLayout->addStretch(1);
-    vLayout->addWidget(settingRegulatorButton);
 
     setLayout(vLayout);
 
@@ -66,6 +76,8 @@ WidgetRegulatorFurnace::WidgetRegulatorFurnace(QWidget *parent) :
     connect (startStopButton,SIGNAL(toggled(bool)),manualRegulatorWidget,SLOT(setRegulatorOn(bool)));
     connect (startStopButton,SIGNAL(toggled(bool)),progPowerRegulatorWidget,SLOT(setRegulatorOn(bool)));
     connect(settingRegulatorButton,SIGNAL(clicked()),this,SLOT(settingsRegulatorButtonClicked()));
+
+    diagnosticWidget->hide();
 
     emit regulatorModeChange(Shared::manual);
 }
@@ -144,6 +156,8 @@ void WidgetRegulatorFurnace::startRegulatorClicked(){
             startStopButton->setChecked(true);
             emergencyStopButton->setEnabled(true);
             startStopButton->setText(tr("Выключение регулятора"));
+            statusLed->setOffColor1(defaultColorOn1LegIndicator);
+            statusLed->setOffColor2(defaultColorOn2LegIndicator);
             emit regulatorStart();
             emit message(tr("Включение регулятора."),Shared::warning);
         }
@@ -158,6 +172,8 @@ void WidgetRegulatorFurnace::startRegulatorClicked(){
 
         if (ret==QMessageBox::Yes){
             startStopButton->setText(tr("Включение регулятора"));
+            statusLed->setOffColor1(defaultColorOff1LegIndicator);
+            statusLed->setOffColor2(defaultColorOff2LegIndicator);
             emit message(tr("Выключение регулятора."),Shared::warning);
             emit regulatorStop();
             offRegulator();
@@ -201,6 +217,8 @@ void WidgetRegulatorFurnace::offRegulator(){
     }
     startStopButton->setChecked(false);
     startStopButton->setText(tr("Включение регулятора"));
+    statusLed->setOffColor1(defaultColorOff1LegIndicator);
+    statusLed->setOffColor2(defaultColorOff2LegIndicator);
     emergencyStopButton->setEnabled(false);
     autoRegulatorWidget->setEnabledWidget(false);
     progPowerRegulatorWidget->setEnabledWidget(false);

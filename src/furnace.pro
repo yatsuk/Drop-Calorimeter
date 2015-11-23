@@ -115,3 +115,6 @@ FORMS += \
     constVelocityWidget.ui \
     adcSettingWidget.ui \
     safetyValveWidget.ui
+
+RESOURCES += \
+    ../res/qt_res.qrc

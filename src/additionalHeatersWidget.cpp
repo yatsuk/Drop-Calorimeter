@@ -2,6 +2,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QFont>
 #include <QDebug>
 #include "furnace.h"
 
@@ -99,17 +100,31 @@ AdditionalHeaterGroupBox::AdditionalHeaterGroupBox(QWidget *parent) :
 {
     dialogParametersRegulator = new DialogParametersRegulator(this);
 
-    outPowerLabel = new QLabel (tr("Выходная мощность (%) = 0"));
-    settingsButton = new QPushButton (tr("настройки регулятора"));
+    QFont captionFont;
+    captionFont.setBold(true);
+    defaultColorOn1LegIndicator = QColor(0,255,0);
+    defaultColorOn2LegIndicator = QColor(0,192,0);
+    defaultColorOff1LegIndicator = QColor(0,28,0);
+    defaultColorOff2LegIndicator = QColor(0,128,0);
+    statusLed = new QLedIndicator();
+    statusLed->setCheckable(false);
+    outPowerLabel = new QLabel (tr("Выходная мощность (%) = 0.00"));
+    outPowerLabel->setFont(captionFont);
+    settingsButton = new QPushButton (QIcon(":/images/Settings.ico"),"");
+    QHBoxLayout * hLayout = new QHBoxLayout;
+    hLayout->addWidget(statusLed);
+    hLayout->addWidget(outPowerLabel);
+    hLayout->addStretch(1);
+    hLayout->addWidget(settingsButton);
+
 
     manualRegulatorWidget = new ManualRegulatorWidget;
     constValueRegulatorWidget = new ConstValueRegulatorWidget;
 
     QVBoxLayout * layout = new QVBoxLayout;
-    layout->addWidget(outPowerLabel);
+    layout->addLayout(hLayout);
     layout->addWidget(manualRegulatorWidget);
     layout->addWidget(constValueRegulatorWidget);
-    layout->addWidget(settingsButton);
 
     setLayout(layout);
 
@@ -129,12 +144,16 @@ void AdditionalHeaterGroupBox::turnOnRegulator()
 {
     constValueRegulatorWidget->setRegulatorOn(true);
     manualRegulatorWidget->setRegulatorOn(true);
+    statusLed->setOffColor1(defaultColorOn1LegIndicator);
+    statusLed->setOffColor2(defaultColorOn2LegIndicator);
 }
 
 void AdditionalHeaterGroupBox::turnOffRegulator()
 {
     constValueRegulatorWidget->setRegulatorOn(false);
     manualRegulatorWidget->setRegulatorOn(false);
+    statusLed->setOffColor1(defaultColorOff1LegIndicator);
+    statusLed->setOffColor2(defaultColorOff2LegIndicator);
 }
 
 void AdditionalHeaterGroupBox::setRegulatorModeManual()

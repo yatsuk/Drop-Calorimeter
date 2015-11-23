@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QPushButton>
 #include <QLabel>
+#include <qledindicator.h>
 #include "shared.h"
 #include "automaticRegulatorWidget.h"
 #include "manualRegulatorWidget.h"
@@ -56,7 +57,11 @@ private:
     ManualRegulatorWidget * manualRegulatorWidget;
     ProgPowerRegulatorWidget * progPowerRegulatorWidget;
 
-
+    QColor defaultColorOn1LegIndicator;
+    QColor defaultColorOn2LegIndicator;
+    QColor defaultColorOff1LegIndicator;
+    QColor defaultColorOff2LegIndicator;
+    QLedIndicator * statusLed;
 };
 
 #endif // WIDGETREGULATORFURNACE_H

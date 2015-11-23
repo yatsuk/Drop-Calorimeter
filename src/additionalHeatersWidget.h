@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <QRadioButton>
 #include <QDoubleSpinBox>
+#include <qledindicator.h>
 
 #include "dialogParametersRegulator.h"
 #include "manualRegulatorWidget.h"
@@ -75,6 +76,12 @@ private:
     DialogParametersRegulator * dialogParametersRegulator;
     Regulator * m_regulator;
     QString name_;
+
+    QColor defaultColorOn1LegIndicator;
+    QColor defaultColorOn2LegIndicator;
+    QColor defaultColorOff1LegIndicator;
+    QColor defaultColorOff2LegIndicator;
+    QLedIndicator * statusLed;
 
 };
 
