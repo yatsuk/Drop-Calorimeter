@@ -12,13 +12,6 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp \
-    widgetRegulatorFurnace.cpp \
-    logView.cpp \
-    automaticRegulatorWidget.cpp \
-    manualRegulatorWidget.cpp \
-    progPowerRegulatorWidget.cpp \
-    addTempSegmentDialog.cpp \
     temperatureSegment.cpp \
     segments.cpp \
     regulator.cpp \
@@ -29,40 +22,40 @@ SOURCES += main.cpp\
     ltr34api.cpp \
     dac.cpp \
     channel.cpp \
-    diagnosticwidget.cpp \
     diagnostic.cpp \
     ltr43.cpp \
     ltr43api.cpp \
-    diagnosticSettingWidget.cpp \
     ltr27api.cpp \
     adc.cpp \
-    signalsView.cpp \
-    calibrationHeaterWidget.cpp\
     dataRecorder.cpp \
-    dialogParametersRegulator.cpp \
-    startupWizard.cpp \
-    adcSettingWidget.cpp \
     ltr114api.cpp \
     crc.cpp \
     ltr114.cpp \
-    additionalHeatersWidget.cpp \
-    coversWidget.cpp \
-    qledindicator.cpp \
-    coversAndCalHeaterWidget.cpp \
     Devices.cpp \
     arduino.cpp \
-    qcustomplot.cpp \
-    chartWidget.cpp
+    GUI/adcSettingWidget.cpp \
+    GUI/additionalHeatersWidget.cpp \
+    GUI/addTempSegmentDialog.cpp \
+    GUI/automaticRegulatorWidget.cpp \
+    GUI/calibrationHeaterWidget.cpp \
+    GUI/chartWidget.cpp \
+    GUI/coversAndCalHeaterWidget.cpp \
+    GUI/coversWidget.cpp \
+    GUI/diagnosticSettingWidget.cpp \
+    GUI/diagnosticwidget.cpp \
+    GUI/dialogParametersRegulator.cpp \
+    GUI/logView.cpp \
+    GUI/mainwindow.cpp \
+    GUI/manualRegulatorWidget.cpp \
+    GUI/progPowerRegulatorWidget.cpp \
+    GUI/qcustomplot.cpp \
+    GUI/qledindicator.cpp \
+    GUI/signalsView.cpp \
+    GUI/startupWizard.cpp \
+    GUI/widgetRegulatorFurnace.cpp
 
-HEADERS  += mainwindow.h \
-    widgetRegulatorFurnace.h \
-    logView.h \
-    shared.h \
+HEADERS  += shared.h \
     parameters.h \
-    automaticRegulatorWidget.h \
-    manualRegulatorWidget.h \
-    progPowerRegulatorWidget.h \
-    addTempSegmentDialog.h \
     temperatureSegment.h \
     segments.h \
     regulator.h \
@@ -76,31 +69,44 @@ HEADERS  += mainwindow.h \
     dac.h \
     channel.h \
     regulatorParameters.h \
-    diagnosticwidget.h \
     diagnostic.h \
     ltr43.h \
     ltr43api.h \
-    diagnosticSettingWidget.h \
     ltr27api.h \
     adc.h \
-    signalsView.h \
-    calibrationHeaterWidget.h\
     dataRecorder.h \
-    dialogParametersRegulator.h \
-    startupWizard.h \
     ltr114api.h \
     crc.h \
     crclib_cfg.h \
     ltr114.h \
-    adcSettingWidget.h \
-    additionalHeatersWidget.h \
-    qledindicator.h \
-    coversWidget.h \
-    coversAndCalHeaterWidget.h \
     Devices.h \
     arduino.h \
-    qcustomplot.h \
-    chartWidget.h
+    GUI/adcSettingWidget.h \
+    GUI/additionalHeatersWidget.h \
+    GUI/addTempSegmentDialog.h \
+    GUI/automaticRegulatorWidget.h \
+    GUI/calibrationHeaterWidget.h \
+    GUI/chartWidget.h \
+    GUI/coversAndCalHeaterWidget.h \
+    GUI/coversWidget.h \
+    GUI/diagnosticSettingWidget.h \
+    GUI/diagnosticwidget.h \
+    GUI/dialogParametersRegulator.h \
+    GUI/logView.h \
+    GUI/mainwindow.h \
+    GUI/manualRegulatorWidget.h \
+    GUI/progPowerRegulatorWidget.h \
+    GUI/qcustomplot.h \
+    GUI/qledindicator.h \
+    GUI/signalsView.h \
+    GUI/startupWizard.h \
+    GUI/ui_adcSettingWidget.h \
+    GUI/ui_constVelocityWidget.h \
+    GUI/ui_dialogParametersRegulator.h \
+    GUI/ui_mainwindow.h \
+    GUI/ui_safetyValveWidget.h \
+    GUI/ui_startupWizard.h \
+    GUI/widgetRegulatorFurnace.h
 
 
 win32 {
@@ -110,11 +116,11 @@ LIBS += -lws2_32
 }
 
 FORMS += \
-    dialogParametersRegulator.ui \
-    startupWizard.ui \
-    constVelocityWidget.ui \
-    adcSettingWidget.ui \
-    safetyValveWidget.ui
+    GUI/adcSettingWidget.ui \
+    GUI/constVelocityWidget.ui \
+    GUI/dialogParametersRegulator.ui \
+    GUI/safetyValveWidget.ui \
+    GUI/startupWizard.ui
 
 RESOURCES += \
     ../res/qt_res.qrc
