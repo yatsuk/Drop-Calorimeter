@@ -7,7 +7,7 @@
 #include <QVector>
 #include "parameters.h"
 #include "shared.h"
-#include "ltr27api.h"
+#include "LTR\ltr27api.h"
 #include "terconData.h"
 
 
@@ -44,15 +44,15 @@ private:
     long double convertVolt2TemperatureTypeK(double value);
     long double convertTemperature2VoltTypeK(double temperature);
 
-    const static double maxDeltaCurrentPrevValue = 0.1;//mVolt
+    const static constexpr double maxDeltaCurrentPrevValue = 0.1;//mVolt
     QVector <double> sourcesDataCh1;
     QVector <double> averageDataCh1;
     QVector <double> sourcesDataCh2;
     QVector <double> averageDataCh2;
     double roomTemperature;
     double offsetVoltRoomTemperature;
-    const static double offsetZero = 0.004;
-    const static double scale = 0.99976;
+    const static constexpr double offsetZero = 0.004;
+    const static constexpr double scale = 0.99976;
     bool firstValue;
 
     TLTR27 * ltr27;

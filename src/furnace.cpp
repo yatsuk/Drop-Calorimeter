@@ -1,5 +1,6 @@
 ﻿#include "furnace.h"
 #include <math.h>
+#include <QJsonDocument>
 #include <QDebug>
 
 Furnace * Furnace::g_furnace = 0;
@@ -157,7 +158,7 @@ void Furnace::terconDataReceive(TerconData data){
     data.time = time->elapsed();
     writeFile(data);
 
-    if(data.deviceNumber==1&&data.channel==2){
+    if(data.deviceNumber==5&&data.channel==5){
         data.value = convertU2C(data.value);
     }
 
@@ -239,7 +240,8 @@ void Furnace::writeFile(TerconData data){
 }
 
 bool Furnace::connectTercon(){
-    tercon = new Tercon(this);
+    tercon = new Tercon();
+    devices.append(tercon);
     tercon->description = tr("Температура ампулы и сопротивление калориметра");
     tercon->setPortName("COM6");
     tercon->setDeviceNumber(1);
@@ -250,7 +252,8 @@ bool Furnace::connectTercon(){
             this,SIGNAL(message(QString,Shared::MessageLevel)));
     tercon->startAck();
 
-    terconThermostat = new Tercon(this);
+    terconThermostat = new Tercon();
+    devices.append(terconThermostat);
     terconThermostat->setPortName("COM8");
     terconThermostat->description = tr("Температура термостата диф. термопара термостата");
     terconThermostat->setDeviceNumber(2);
@@ -263,7 +266,8 @@ bool Furnace::connectTercon(){
             this,SLOT(receiveData(TerconData)));
     terconThermostat->startAck();
 
-    terconCalibrationHeater = new Tercon(this);
+    terconCalibrationHeater = new Tercon();
+    devices.append(terconCalibrationHeater);
     terconCalibrationHeater->description = tr("Напряжение калибровочного нагревателя");
     terconCalibrationHeater->setPortName("COM9");
     terconCalibrationHeater->setDeviceNumber(3);
@@ -487,6 +491,7 @@ void Furnace::run(){
 
 bool Furnace::closeAppRequest()
 {
+    //saveJSONSettings();
     arduino->stopAck();
     return ltr114->stop();
 }
@@ -611,4 +616,18 @@ void Furnace::loadSettings()
     downHeaterParameters.averagePowerCount = settings->value("Regulator of down heater/AveragePower").toInt();
 
     regulatorDownHeater_->setParameters(downHeaterParameters);
+}
+
+void Furnace::saveJSONSettings()
+{
+    QFile saveFile(QStringLiteral("settings.json"));
+
+       if (!saveFile.open(QIODevice::WriteOnly)) {
+           qWarning("Couldn't open save file.");
+       }
+
+       QJsonObject jsonObject = devices.at(0)->getSetting();
+
+       QJsonDocument saveDoc(jsonObject);
+       saveFile.write(saveDoc.toJson());
 }

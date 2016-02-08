@@ -34,7 +34,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     temperatureSample = new ChartWidget();
     temperatureSample->setPlotTitle(tr("Температура образца"));
-    temperatureSample->addSignal(1, 2, true, Qt::black, tr("Температура образца"));
+    temperatureSample->addSignal(5, 5, true, Qt::black, tr("Температура образца"));
     temperatureSample->setYLeftAxisTitle(tr("Температура, %1C").arg(QChar(176)));
 
     resistance = new ChartWidget();
@@ -61,7 +61,7 @@ MainWindow::MainWindow(QWidget *parent) :
     temperatureFurnace->addSignal(5, 2, true, Qt::red, tr("Температура осн. нагревателя"));
     temperatureFurnace->addSignal(5, 3, true, Qt::green, tr("Нижний охр. нагреватель"));
     temperatureFurnace->addSignal(5, 4, true, Qt::blue, tr("Выравнивающий блок"));
-    temperatureFurnace->addSignal(1, 2, true, Qt::magenta, tr("Температура образца"));
+    temperatureFurnace->addSignal(5, 5, true, Qt::magenta, tr("Температура образца"));
     temperatureFurnace->setYLeftAxisTitle(tr("Температура, %1C").arg(QChar(176)));
 
     tab = new QTabWidget();

@@ -9,7 +9,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets serialport printsupport opengl
 
 TARGET = furnace
 TEMPLATE = app
-
+CONFIG += c++14
 
 SOURCES += main.cpp\
     temperatureSegment.cpp \
@@ -18,18 +18,11 @@ SOURCES += main.cpp\
     tercon.cpp \
     furnace.cpp \
     terconData.cpp \
-    ltrapi.cpp \
-    ltr34api.cpp \
     dac.cpp \
-    channel.cpp \
     diagnostic.cpp \
     ltr43.cpp \
-    ltr43api.cpp \
-    ltr27api.cpp \
     adc.cpp \
     dataRecorder.cpp \
-    ltr114api.cpp \
-    crc.cpp \
     ltr114.cpp \
     Devices.cpp \
     arduino.cpp \
@@ -52,7 +45,16 @@ SOURCES += main.cpp\
     GUI/qledindicator.cpp \
     GUI/signalsView.cpp \
     GUI/startupWizard.cpp \
-    GUI/widgetRegulatorFurnace.cpp
+    GUI/widgetRegulatorFurnace.cpp \
+    LTR/channel.cpp \
+    LTR/crc.cpp \
+    LTR/ltr27api.cpp \
+    LTR/ltr34api.cpp \
+    LTR/ltr43api.cpp \
+    LTR/ltr114api.cpp \
+    LTR/ltrapi.cpp \
+    device.cpp \
+    filter.cpp
 
 HEADERS  += shared.h \
     parameters.h \
@@ -62,22 +64,12 @@ HEADERS  += shared.h \
     tercon.h \
     furnace.h \
     terconData.h \
-    ltrapitypes.h \
-    ltrapidefine.h \
-    ltrapi.h \
-    ltr34api.h \
     dac.h \
-    channel.h \
     regulatorParameters.h \
     diagnostic.h \
     ltr43.h \
-    ltr43api.h \
-    ltr27api.h \
     adc.h \
     dataRecorder.h \
-    ltr114api.h \
-    crc.h \
-    crclib_cfg.h \
     ltr114.h \
     Devices.h \
     arduino.h \
@@ -106,7 +98,19 @@ HEADERS  += shared.h \
     GUI/ui_mainwindow.h \
     GUI/ui_safetyValveWidget.h \
     GUI/ui_startupWizard.h \
-    GUI/widgetRegulatorFurnace.h
+    GUI/widgetRegulatorFurnace.h \
+    LTR/channel.h \
+    LTR/crc.h \
+    LTR/crclib_cfg.h \
+    LTR/ltr27api.h \
+    LTR/ltr34api.h \
+    LTR/ltr43api.h \
+    LTR/ltr114api.h \
+    LTR/ltrapi.h \
+    LTR/ltrapidefine.h \
+    LTR/ltrapitypes.h \
+    device.h \
+    filter.h
 
 
 win32 {
@@ -120,7 +124,8 @@ FORMS += \
     GUI/constVelocityWidget.ui \
     GUI/dialogParametersRegulator.ui \
     GUI/safetyValveWidget.ui \
-    GUI/startupWizard.ui
+    GUI/startupWizard.ui \
+    GUI/addDevice.ui
 
 RESOURCES += \
     ../res/qt_res.qrc

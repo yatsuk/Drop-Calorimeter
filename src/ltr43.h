@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QTimer>
-#include "ltr43api.h"
+#include "LTR\ltr43api.h"
 #include "shared.h"
 
 class Ltr43 : public QObject

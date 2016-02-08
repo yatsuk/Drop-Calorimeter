@@ -77,7 +77,7 @@ void SignalsView::addValue(TerconData terconData){
         }
 
     }
-    else if (terconData.deviceNumber==1&&terconData.channel==2){
+    else if (terconData.deviceNumber==5&&terconData.channel==5){
         for (int i =0;i <labels.size();++i){
             QLabel * label = labels.at(i);
             if (label->objectName()=="SampleTemperature")

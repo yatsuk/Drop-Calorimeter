@@ -3,14 +3,45 @@
 
 #include <QObject>
 #include <QSerialPort>
+#include <QThread>
+#include <QJsonObject>
+#include "device.h"
 #include "terconData.h"
 #include "shared.h"
 
-class Tercon : public QObject
+class TerconWorker : public QObject
+{
+    Q_OBJECT
+
+public:
+    TerconWorker();
+
+public slots:
+    void doWork();
+    void finishWork();
+    void setParameters(const QJsonObject &parameters);
+
+private slots:
+    void readData();
+    void extractData();
+    void convertData(QByteArray strData);
+
+signals:
+    void message(const QString & msg, Shared::MessageLevel msgLevel);
+    void dataSend(TerconData data);
+
+private:
+    QSerialPort * port;
+    QByteArray recvBytes;
+    int deviceNumber_ = -1;
+    QString portName_;
+};
+
+class Tercon : public Device
 {
     Q_OBJECT
 public:
-    explicit Tercon(QObject *parent = 0);
+    Tercon();
     ~Tercon();
     void setPortName(const QString & portName);
     void setDeviceNumber(int number);
@@ -24,18 +55,15 @@ public:
 
 signals:
     void dataSend(TerconData data);
-    void message(const QString & msg, Shared::MessageLevel msgLevel);
-
-public slots:
-private slots:
-    void readData();
-    void extractData();
-    void convertData(QByteArray strData);
+    //void message(const QString & msg, Shared::MessageLevel msgLevel);
+    void operate();
+    void finishOperate();
+    void sendParameters(const QJsonObject & json);
 
 private:
-    int deviceNumber;
-    QSerialPort * port;
-    QByteArray recvBytes;
+    int deviceNumber_ = -1;
+    QString portName_;
+    QThread workerThread_;
 };
 
 #endif // TERCON_H

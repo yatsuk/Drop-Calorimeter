@@ -7,7 +7,7 @@
 #include <QPushButton>
 #include <QRadioButton>
 #include <QDoubleSpinBox>
-#include <qledindicator.h>
+#include <GUI\qledindicator.h>
 
 #include "dialogParametersRegulator.h"
 #include "manualRegulatorWidget.h"

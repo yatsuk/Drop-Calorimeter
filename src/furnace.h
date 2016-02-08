@@ -16,6 +16,7 @@
 #include "dataRecorder.h"
 #include "parameters.h"
 #include "Devices.h"
+#include "device.h"
 #include "arduino.h"
 
 
@@ -72,6 +73,7 @@ private slots:
     void writeFile(TerconData data);
     void saveSettings();
     void loadSettings();
+    void saveJSONSettings();
 
 private:
     double convertU2C (double U);
@@ -98,6 +100,8 @@ private:
     QElapsedTimer * time;
     QElapsedTimer * workingTimeCalibrHeater;
     static Furnace * g_furnace;
+
+    QVector <Device *> devices;
     
 };
 
