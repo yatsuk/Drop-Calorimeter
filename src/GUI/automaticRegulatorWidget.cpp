@@ -164,11 +164,11 @@ void AutomaticRegulatorWidget::setCurrentTemperatureSegment(int segmentNumber){
 }
 
 void AutomaticRegulatorWidget::setTotalDuration(double duration){
-    totalDurationLabel->setText(tr("Общая продолжительность ")+QTime(0,0).addSecs(duration*60).toString("hh:mm:ss"));
+    totalDurationLabel->setText(tr("Общая продолжительность ")+QTime(0,0).addSecs(duration).toString("hh:mm:ss"));
 }
 
 void AutomaticRegulatorWidget::setRemainingTime(double time){
-    remainingTimeLabel->setText(tr("Оставшееся время ")+QTime(0,0).addSecs(time*60).toString("hh:mm:ss"));
+    remainingTimeLabel->setText(tr("Оставшееся время ")+QTime(0,0).addSecs(time).toString("hh:mm:ss"));
 }
 
 void AutomaticRegulatorWidget::updateTable(){
@@ -189,7 +189,7 @@ void AutomaticRegulatorWidget::updateTable(){
         velocity->setTextAlignment(Qt::AlignCenter);
         QTableWidgetItem * endTemperature = new QTableWidgetItem(QString::number(temperatureSegments->segment(i)->endTemperature()));
         endTemperature->setTextAlignment(Qt::AlignCenter);
-        QTableWidgetItem * duration = new QTableWidgetItem(QTime(0,0).addSecs(temperatureSegments->segment(i)->duration()*60).toString("hh:mm:ss"));
+        QTableWidgetItem * duration = new QTableWidgetItem(QTime(0,0).addSecs(temperatureSegments->segment(i)->duration()).toString("hh:mm:ss"));
         duration->setTextAlignment(Qt::AlignCenter);
 
         tableSegments->setItem(i,0,typeSegment);

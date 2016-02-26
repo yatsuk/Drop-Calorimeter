@@ -24,7 +24,7 @@ public:
 protected:
     QString m_typeTitle;
     Type m_type;
-    double m_duration;//in min
+    double m_duration;//in sec
     double m_beginTemperature;
     double m_endTemperature;
     double m_velocity;

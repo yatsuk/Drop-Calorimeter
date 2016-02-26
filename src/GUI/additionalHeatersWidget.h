@@ -97,6 +97,7 @@ signals:
     void message(const QString & msg, Shared::MessageLevel msgLevel);
 
 public slots:
+    void turnOffRegulators();
 
 private slots:
     void startRegulatorClicked();

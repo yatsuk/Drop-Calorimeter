@@ -20,9 +20,13 @@ Furnace::Furnace(QObject *parent) :
     workingTimeCalibrHeater = new QElapsedTimer();
 
     regulatorOfFurnace = new Regulator(this);
+    regulatorOfFurnace->setObjectName("regulator-main-heater");
     regulatorOfThermostat = new Regulator(this);
+    regulatorOfThermostat->setObjectName("regulator-thermostat");
     regulatorUpHeater_ = new Regulator(this);
+    regulatorUpHeater_->setObjectName("regulator-up-heater");
     regulatorDownHeater_ = new Regulator(this);
+    regulatorDownHeater_->setObjectName("regulator-down-heater");
     covers = new Covers(this);
     safetyValve = new SafetyValve(this);
     sampleLock = new SampleLock(this);
@@ -285,26 +289,24 @@ bool Furnace::connectTercon(){
 }
 
 void Furnace::receiveData(TerconData data){
-    static double furnaceTemperature;
-    static bool furnaceTemperatureDataReady;
-
     if(data.channel==2&&data.deviceNumber==2){ //thermostat
         regulatorOfThermostat->setValueADC(data.value);
         //m_diagnostic->diagnosticThermocouple(data.value);
     }
     else if(data.channel==2&&data.deviceNumber==5){//main heater
         regulatorOfFurnace->setValueADC(data.value);
-        furnaceTemperature = data.value;
-        furnaceTemperatureDataReady = true;
     }
     else if(data.channel==1&&data.deviceNumber==5){ //up heater
-        if (furnaceTemperatureDataReady){
-            regulatorUpHeater_->setValueADC(data.value - furnaceTemperature);
+        double setPointMainHeater = regulatorOfFurnace->getSetPoint();
+        if (setPointMainHeater!=0){
+            regulatorUpHeater_->setValueADC(data.value - setPointMainHeater);
         }
     }
     else if(data.channel==3&&data.deviceNumber==5){//down heater
-        if (furnaceTemperatureDataReady)
-            regulatorDownHeater_->setValueADC(data.value - furnaceTemperature);
+        double setPointMainHeater = regulatorOfFurnace->getSetPoint();
+        if (setPointMainHeater!=0){
+            regulatorDownHeater_->setValueADC(data.value - setPointMainHeater);
+        }
     }
 
 }
@@ -351,6 +353,10 @@ void Furnace::run(){
 
     connect(regulatorOfFurnace,SIGNAL(stopRegulator()),
             this,SLOT(stopDacFurnaceChannel()));
+    connect(regulatorOfFurnace,SIGNAL(stopRegulator()),
+            regulatorUpHeater_,SLOT(regulatorStop()));
+    connect(regulatorOfFurnace,SIGNAL(stopRegulator()),
+            regulatorDownHeater_,SLOT(regulatorStop()));
     connect(regulatorOfFurnace,SIGNAL(updateParameters()),
             this,SLOT(saveSettings()));
     connect(regulatorOfFurnace,SIGNAL(outPower(double)),
@@ -622,12 +628,12 @@ void Furnace::saveJSONSettings()
 {
     QFile saveFile(QStringLiteral("settings.json"));
 
-       if (!saveFile.open(QIODevice::WriteOnly)) {
-           qWarning("Couldn't open save file.");
-       }
+    if (!saveFile.open(QIODevice::WriteOnly)) {
+        qWarning("Couldn't open save file.");
+    }
 
-       QJsonObject jsonObject = devices.at(0)->getSetting();
+    QJsonObject jsonObject = devices.at(0)->getSetting();
 
-       QJsonDocument saveDoc(jsonObject);
-       saveFile.write(saveDoc.toJson());
+    QJsonDocument saveDoc(jsonObject);
+    saveFile.write(saveDoc.toJson());
 }

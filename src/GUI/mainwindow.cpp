@@ -167,8 +167,14 @@ void MainWindow::beginNewExperiment()
 
     connect(furnace,SIGNAL(AdcTerconDataSend(TerconData)),
             signalsView,SLOT(addValue(TerconData)));
-    connect(furnace->regulatorFurnace(),SIGNAL(setPointTemperature(TerconData)),
-            signalsView,SLOT(addValue(TerconData)));
+
+    connect(furnace->regulatorFurnace(),SIGNAL(state(QJsonObject)),
+            signalsView,SLOT(updateState(QJsonObject)));
+    connect(furnace->regulatorUpHeater(),SIGNAL(state(QJsonObject)),
+            signalsView,SLOT(updateState(QJsonObject)));
+    connect(furnace->regulatorDownHeater(),SIGNAL(state(QJsonObject)),
+            signalsView,SLOT(updateState(QJsonObject)));
+
 }
 
 void MainWindow::loadExperiment()

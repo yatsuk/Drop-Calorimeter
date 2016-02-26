@@ -46,11 +46,11 @@ HeatingSegment::HeatingSegment(double beginTemperature, double endTemperature, d
 }
 
 double HeatingSegment::requiredTemperature(double time){
-    return m_beginTemperature+m_velocity*time;
+    return m_beginTemperature+m_velocity*time/60;
 }
 
 void HeatingSegment::calculateDuration(){
-    m_duration = (m_endTemperature-m_beginTemperature)/m_velocity;
+    m_duration = (m_endTemperature-m_beginTemperature)/m_velocity * 60;
 }
 
 void HeatingSegment::setBeginTemperature(double temperature){
@@ -70,11 +70,11 @@ CoolingSegment::CoolingSegment(double beginTemperature, double endTemperature, d
 }
 
 double CoolingSegment::requiredTemperature(double time){
-    return m_beginTemperature-m_velocity*time;
+    return m_beginTemperature-m_velocity*time/60;
 }
 
 void CoolingSegment::calculateDuration(){
-    m_duration = (m_beginTemperature-m_endTemperature)/m_velocity;
+    m_duration = (m_beginTemperature-m_endTemperature)/m_velocity * 60;
 }
 
 void CoolingSegment::setBeginTemperature(double temperature){

@@ -102,7 +102,7 @@ void AddTempSegmentDialog::acceptButtonClicked(){
     }
 
     case 2:{
-        emit newSegment(new IsotermalSegment(0,timeIsotermSegment->value()));
+        emit newSegment(new IsotermalSegment(0,timeIsotermSegment->value() * 60));
         break;
     }
     }

@@ -301,16 +301,20 @@ void AdditionalHeatersWidget::connectRegulator()
     connect(Furnace::instance()->regulatorDownHeater(),SIGNAL(outPower(double)),
             downHeater,SLOT(setPowerLabel(double)));
 
+    connect(Furnace::instance()->regulatorUpHeater(),SIGNAL(stopRegulator()),
+            this,SLOT(turnOffRegulators()));
+
     connect(Furnace::instance()->regulatorUpHeater(),SIGNAL(outPower(double)),
             upHeater->manualRegulatorWidget,SLOT(setValue(double)));
     connect(Furnace::instance()->regulatorDownHeater(),SIGNAL(outPower(double)),
             downHeater->manualRegulatorWidget,SLOT(setValue(double)));
+}
 
-
-
-    /*connect(regulatorOfFurnace,SIGNAL(manualMode()),this,SLOT(setRegulatorModeManual()));
-
-    connect(regulatorOfFurnace,SIGNAL(stopRegulator()),this,SLOT(offRegulator()));
-*/
-
+void AdditionalHeatersWidget::turnOffRegulators()
+{
+    onHeaterButton->setText(tr("Включение нагревателей"));
+    emit message(tr("Выключение охранных нагревателей."),Shared::warning);
+    upHeater->turnOffRegulator();
+    downHeater->turnOffRegulator();
+    onHeaterButton->setChecked(false);
 }

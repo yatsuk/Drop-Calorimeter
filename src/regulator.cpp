@@ -27,6 +27,11 @@ Regulator::Regulator(QObject *parent) :
 
     velocity_ = 0;
     constVelocitySegment_ = 0;
+
+    state_["out-power"]=0;
+    state_["mode"]="manual";
+    state_["enable"]=false;
+    prepareAndSendState();
 }
 
 Regulator::~Regulator(){
@@ -37,6 +42,8 @@ void Regulator::smoothOff(){
     emit manualMode();
     power = powerArray.at(powerArray.count()-2);
     smoothOffTimer->start(1000);
+    state_["mode"]="manual";
+    prepareAndSendState();
 }
 
 void Regulator::smoothTimerTimeout(){
@@ -46,8 +53,14 @@ void Regulator::smoothTimerTimeout(){
         emit emergencyStopRegulator();
         regulatorEmergencyStop();
         smoothOffTimer->stop();
+
+        state_["out-power"]=0;
+        prepareAndSendState();
+
         return;
     }
+    state_["out-power"]=power;
+    prepareAndSendState();
     emit outPower(power);
 }
 
@@ -55,6 +68,8 @@ void Regulator::progTimerTimeout(){
     if(regulatorOn){
         power+=incPower_;
         emit outPower(power);
+        state_["out-power"]=power;
+        prepareAndSendState();
     }
 }
 
@@ -114,6 +129,15 @@ void Regulator::calculatePower(double value){
     emit setPointTemperature(TerconData(100,0,setPoint));
     emit outPower(power);
     emit regulatorLogData(QString("%1\t%2\t%3\t%4\t%5\t%6\t%7\r\n").arg(value).arg(average).arg(error).arg(power).arg(error*parameters_.gP).arg(integral*parameters_.gI).arg(derivative*parameters_.gD));
+
+    state_["value"]=value;
+    state_["delta"]=error;
+    state_["P*delta"]=error*parameters_.gP;
+    state_["I*delta"]=integral*parameters_.gI;
+    state_["D*delta"]=derivative*parameters_.gD;
+    state_["set-point"]=setPoint;
+    state_["out-power"]=power;
+    prepareAndSendState();
 }
 
 bool Regulator::isEndSegment(double currentTemperature, int segmentNumber){
@@ -184,7 +208,7 @@ void Regulator::setValueADC(double value){
     if(regulatorOn){
         if(mode==Shared::automatic){
             Segment * segment = temperatureProgramm->segment(currentSegment);
-            double timeMinutes = startAutoRegulatorTime.elapsed()/1000.0/60.0;
+            double timeMinutes = startAutoRegulatorTime.elapsed()/1000.0;
 
             if (timeMinutes>segment->duration()){
                 if (currentSegment==temperatureProgramm->segmentCount()-1){
@@ -199,6 +223,13 @@ void Regulator::setValueADC(double value){
 
             setPoint = segment->requiredTemperature(timeMinutes);
             calculatePower(value);
+            QJsonObject jsonTemperatureSegment;
+            jsonTemperatureSegment["duration"]=segment->duration();
+            jsonTemperatureSegment["velocity"]=segment->velocity();
+            jsonTemperatureSegment["elapsed-time"]=timeMinutes;
+            jsonTemperatureSegment["type"]=segment->typeTitle();
+            state_["temperature-segment"]=jsonTemperatureSegment;
+            prepareAndSendState();
         }
 
         else if (mode==Shared::stopCurrentTemperature){
@@ -212,7 +243,7 @@ void Regulator::setValueADC(double value){
         }
         else if (mode==Shared::constVelocity){
             if (velocity_!=0){
-                double timeMinutes = startAutoRegulatorTime.elapsed()/1000.0/60.0;
+                double timeMinutes = startAutoRegulatorTime.elapsed()/1000.0;
                 setPoint = constVelocitySegment_->requiredTemperature(timeMinutes);
             }
             calculatePower(value);
@@ -225,6 +256,8 @@ void Regulator::setValueADC(double value){
 
 void Regulator::regulatorEmergencyStop(){
     regulatorStop();
+    state_["emergency-stop"]=true;
+    prepareAndSendState();
 }
 
 void Regulator::timerTestSlot(){
@@ -241,6 +274,10 @@ void Regulator::regulatorStart(){
     setPoint = 0;
 
     emit startRegulator();
+
+    state_["emergency-stop"]=false;
+    state_["enable"]=true;
+    prepareAndSendState();
 }
 
 void Regulator::regulatorStop(){
@@ -251,6 +288,10 @@ void Regulator::regulatorStop(){
 
     emit stopRegulator();
     emit outPower(0);
+
+    state_["enable"]=false;
+    state_["out-power"]=0;
+    prepareAndSendState();
 }
 
 void Regulator::clearRegulator(){
@@ -289,6 +330,9 @@ void Regulator::setMode(Shared::RegulatorMode regulatorMode){
 
     mode = regulatorMode;
     firstValue = true;
+
+    state_["mode"]=convertModeToString(mode);
+    prepareAndSendState();
 }
 
 void Regulator::setParameters(RegulatorParameters parameters)
@@ -306,13 +350,14 @@ void Regulator::setValueManual(double value)
         power = value;
         prevPower = power;
         emit outPower(value);
+        state_["out-power"]=value;
+        prepareAndSendState();
     }
 }
 
 void Regulator::setTargetValue(double value)
 {
     setPoint = value;
-    qDebug() <<"tar val" << value;
 }
 
 void Regulator::setTemperatureProgMode(double temperature){
@@ -329,4 +374,34 @@ void Regulator::setVelocity(double velocity)
 {
     velocity_ = velocity;
     firstValue = true;
+}
+
+double Regulator::getSetPoint()
+{
+    return setPoint;
+}
+
+QString Regulator::convertModeToString(Shared::RegulatorMode regulatorMode)
+{
+    if (regulatorMode==Shared::automatic) {
+        return "automatic";
+    } else if (regulatorMode==Shared::manual) {
+        return "manual";
+    } else if (regulatorMode==Shared::programPower) {
+        return "programPower";
+    } else if (regulatorMode==Shared::stopCurrentTemperature) {
+        return "stopCurrentTemperature";
+    } else if (regulatorMode==Shared::constVelocity) {
+        return "constVelocity";
+    } else if (regulatorMode==Shared::constValue) {
+        return "constValue";
+    }
+
+    return "";
+}
+
+void Regulator::prepareAndSendState()
+{
+    state_["sender"]=objectName();
+    emit state(state_);
 }

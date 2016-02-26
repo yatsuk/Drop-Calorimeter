@@ -215,15 +215,8 @@ bool Ltr114Worker::start()
                 stop();
                 return false;
             }
-            TerconData dataCh1;
-            dataCh1.channel=1;
-            dataCh1.deviceNumber=5;
-            dataCh1.unit='T';
-            dataCh1.value=convertVolt2TemperatureTypeA1( procData[0]*(1e+3) +offsetVoltRoomTemperature);
 
-            emit dataSend(dataCh1);
-
-            TerconData dataCh2;
+            TerconData dataCh2; // термопара основного нагреватель
             dataCh2.channel=2;
             dataCh2.deviceNumber=5;
             dataCh2.unit='T';
@@ -231,7 +224,16 @@ bool Ltr114Worker::start()
 
             emit dataSend(dataCh2);
 
-            TerconData dataCh3;
+            //измерения термопар охранных нагреватели должны отправлться  в обработку после измерений термопар основного нагреватля
+            TerconData dataCh1; // термопара верхнего охр нагреватель
+            dataCh1.channel=1;
+            dataCh1.deviceNumber=5;
+            dataCh1.unit='T';
+            dataCh1.value=convertVolt2TemperatureTypeA1( procData[0]*(1e+3) +offsetVoltRoomTemperature);
+
+            emit dataSend(dataCh1);
+
+            TerconData dataCh3; // термопара нижнего охр нагреватель
             dataCh3.channel=3;
             dataCh3.deviceNumber=5;
             dataCh3.unit='T';

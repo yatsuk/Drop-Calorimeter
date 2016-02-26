@@ -5,6 +5,7 @@
 #include <QTime>
 #include <QTimer>
 #include <QTextStream>
+#include <QJsonObject>
 #include "segments.h"
 #include "parameters.h"
 #include "shared.h"
@@ -19,6 +20,7 @@ public:
     void setTemperatureProgramm(Segments * tProgramm);
     RegulatorParameters parameters();
     Segments * getTemperatureProgramm();
+    double getSetPoint();
     
 signals:
     void startRegulator();
@@ -30,6 +32,7 @@ signals:
     void regulatorLogData(const QString & logString);
     void setPointTemperature(TerconData data);
     void updateParameters();
+    void state(const QJsonObject & json);
     
 public slots:
     void setMode(Shared::RegulatorMode regulatorMode);
@@ -46,6 +49,7 @@ public slots:
     void updateTemperatureProgramm();
     void smoothOff();
     void goToSegment(int numberSegment);
+    void prepareAndSendState();
 
     void calculatePower(double value);
 
@@ -67,6 +71,7 @@ private:
     double averageValue(const QVector <double> &valueArray);
     bool isEndSegment(double currentTemperature,int segmentNumber);
     void clearRegulator();
+    QString convertModeToString(Shared::RegulatorMode regulatorMode);
 
     RegulatorParameters parameters_;
     double initialTemperature_;
@@ -97,6 +102,22 @@ private:
     QTimer * testTimer;
 
     Segment * constVelocitySegment_;
+
+    QJsonObject state_;
 };
+/*
+ * Regulator state:
+ * "mode"="automatic"|"manual"|"programPower"|"stopCurrentTemperature"|"constVelocity"|"constValue" - режим регулятора
+ * "enable"=bool - включен или выключен егулятор
+ * "out-power"
+ * "emergency-stop"
+ * "value"
+ * "delta"
+ * "P*delta"
+ * "I*delta"
+ * "D*delta"
+ * "set-point"
+ * "sender"
+ */
 
 #endif // REGULATOR_H
