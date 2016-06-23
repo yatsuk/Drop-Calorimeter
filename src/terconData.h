@@ -8,16 +8,11 @@ class TerconData
 {
 public:
     TerconData();
-    TerconData(int devNumber,int devChannel,double devValue):
-        deviceNumber(devNumber),
-        channel(devChannel),
-        value(devValue)
-    {}
 
-    int deviceNumber;
-    short channel;
     double value;
-    QChar unit;  
+    QString unit;
+    QString id;
+    QString message;
     int time;
 
     static const int virtualDeviceNumber = 100;

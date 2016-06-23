@@ -3,81 +3,33 @@
 #include <QHBoxLayout>
 #include <QGroupBox>
 #include <QFont>
+#include <QtMath>
 #include <QDebug>
+#include "furnace.h"
 
 SignalsView::SignalsView(QWidget *parent) :
     QWidget(parent)
 {
     furnaceSignalsView = new FurnaceSignalsView;
+    calorimeterSignalsView = new CalorimeterSignalsView;
 
-    layout = new QVBoxLayout;
+    QVBoxLayout * layout = new QVBoxLayout;
     layout->addWidget(furnaceSignalsView);
+    layout->addWidget(calorimeterSignalsView);
     layout->addStretch();
 
     setLayout(layout);
-
-    addSignal("ThermostatDiffTemperature");
-    addSignal("ThermostatTemperature");
-    addSignal("Resistance");
-}
-
-void SignalsView::addSignal(const QString &signalName){
-
-    QGroupBox * box = new QGroupBox;
-
-    box->setFont(QFont("Times", 16, QFont::Bold,true));
-
-    if (signalName=="Resistance"){
-        box->setTitle(tr("Сопротивление МТС блока"));
-    }
-    else if (signalName=="ThermostatTemperature"){
-        box->setTitle(tr("Температура термостата"));
-    }
-    else if (signalName=="ThermostatDiffTemperature"){
-        box->setTitle(tr("Дифф. тем-ра термостата"));
-    }
-
-    QLabel * label = new QLabel;
-    label->setObjectName(signalName);
-    labels.append(label);
-
-    QVBoxLayout * boxLayout = new QVBoxLayout;
-    boxLayout->addWidget(label,0,Qt::AlignRight);
-
-    box->setLayout(boxLayout);
-
-    layout->insertWidget(1,box);
 }
 
 void SignalsView::addValue(TerconData terconData){
     furnaceSignalsView->setTemperature(terconData);
-
-    if (terconData.deviceNumber==1&&terconData.channel==1){
-        for (int i =0;i <labels.size();++i){
-            QLabel * label = labels.at(i);
-            if (label->objectName()=="Resistance")
-                label->setText(tr("<H1> %1 Ом</H1>").arg(QString::number(terconData.value,'f',3)));
-        }
-    }
-    else if (terconData.deviceNumber==2&&terconData.channel==2){
-        for (int i =0;i <labels.size();++i){
-            QLabel * label = labels.at(i);
-            if (label->objectName()=="ThermostatTemperature")
-                label->setText(tr("<H1> %1 %2C</H1>").arg(QString::number(terconData.value,'f',3)).arg(QChar(176)));
-        }
-    }
-    else if (terconData.deviceNumber==2&&terconData.channel==1){
-        for (int i =0;i <labels.size();++i){
-            QLabel * label = labels.at(i);
-            if (label->objectName()=="ThermostatDiffTemperature")
-                label->setText(tr("<H1> %1 мВ</H1>").arg(QString::number(terconData.value,'f',3)));
-        }
-    }
+    calorimeterSignalsView->setValue(terconData);
 }
 
 void SignalsView::updateState(const QJsonObject & json)
 {
     furnaceSignalsView->updateState(json);
+    calorimeterSignalsView->updateState(json);
 }
 
 
@@ -92,12 +44,16 @@ FurnaceSignalsView::FurnaceSignalsView(QWidget *parent) :
     bigFont.setPointSize(10);
     setFont(bigFont);
 
+    QFont labelValueFont;
+    labelValueFont.setPointSize(20);
+
     setTitle(tr("Печь калориметра"));
     sampleTemperatureLabel = new QLabel;
     sampleTemperatureLabel->hide();
     sampleTemperatureLabel->setText(tr("Температура обазца"));
     sampleTemperatureValueLabel = new QLabel;
     sampleTemperatureValueLabel->hide();
+    sampleTemperatureValueLabel->setFont(labelValueFont);
     QHBoxLayout * sampleTemperatureLayout = new QHBoxLayout;
     sampleTemperatureLayout->addWidget(sampleTemperatureLabel);
     sampleTemperatureLayout->addStretch(1);
@@ -105,17 +61,18 @@ FurnaceSignalsView::FurnaceSignalsView(QWidget *parent) :
 
     furnaceInertBlockTemperatureLabel = new QLabel;
     furnaceInertBlockTemperatureLabel->hide();
-    furnaceInertBlockTemperatureLabel->setText(tr("Температура выравнивающего блока"));
+    furnaceInertBlockTemperatureLabel->setText(tr("Температура вырав. блока"));
     furnaceInertBlockTemperatureValueLabel = new QLabel;
     furnaceInertBlockTemperatureValueLabel->hide();
+    furnaceInertBlockTemperatureValueLabel->setFont(labelValueFont);
     QHBoxLayout * furnaceInertBlockTemperatureLayout = new QHBoxLayout;
     furnaceInertBlockTemperatureLayout->addWidget(furnaceInertBlockTemperatureLabel);
     furnaceInertBlockTemperatureLayout->addStretch(1);
     furnaceInertBlockTemperatureLayout->addWidget(furnaceInertBlockTemperatureValueLabel);
 
     mainHeater = new HeaterSignalsView(tr("Основной нагреватель"));
-    upHeater = new HeaterSignalsView(tr("Верхний охранный нагреватель"));
-    downHeater = new HeaterSignalsView(tr("Нижний охранный нагреватель"));
+    upHeater = new HeaterSignalsView(tr("Верхний нагреватель"));
+    downHeater = new HeaterSignalsView(tr("Нижний нагреватель"));
 
     QVBoxLayout * mainLayout = new QVBoxLayout;
     mainLayout->addLayout(sampleTemperatureLayout);
@@ -124,20 +81,29 @@ FurnaceSignalsView::FurnaceSignalsView(QWidget *parent) :
     mainLayout->addWidget(upHeater);
     mainLayout->addWidget(downHeater);
     setLayout(mainLayout);
+
+    widgetRegulatorFurnace = new WidgetRegulatorFurnace(this);
+    widgetRegulatorFurnace->setRegulator(Furnace::instance()->regulatorFurnace());
+
+    additionalHeatersWidget = new AdditionalHeatersWidget;
+
+    connect(upHeater,SIGNAL(statusLedClicked()),this,SLOT(showAdditionalRegulatorSettingsWidget()));
+    connect(downHeater,SIGNAL(statusLedClicked()),this,SLOT(showAdditionalRegulatorSettingsWidget()));
+    connect(mainHeater,SIGNAL(statusLedClicked()),this,SLOT(showMainRegulatorSettingsWidget()));
 }
 
 void FurnaceSignalsView::setTemperature(TerconData terconData)
 {
-    if (terconData.deviceNumber==5&&terconData.channel==1){
+    if (terconData.id == "{33bc6e29-4e26-41a6-85f1-cfa0bc5525b9}"){
         upHeater->setTemperature(terconData.value);
     }
-    else if (terconData.deviceNumber==5&&terconData.channel==2){
+    else if (terconData.id == "{a5f14434-bbc4-435e-be15-a7ad91de2701}"){
         mainHeater->setTemperature(terconData.value);
     }
-    else if (terconData.deviceNumber==5&&terconData.channel==3){
+    else if (terconData.id == "{7cb4d773-5b1d-4060-b316-24045308317f}"){
         downHeater->setTemperature(terconData.value);
     }
-    else if (terconData.deviceNumber==5&&terconData.channel==4){
+    else if (terconData.id == "{425f2f72-f773-4f12-8914-fccffacabcfb}"){
         if (furnaceInertBlockTemperatureLabel->isHidden()){
             furnaceInertBlockTemperatureLabel->show();
             furnaceInertBlockTemperatureValueLabel->show();
@@ -146,7 +112,7 @@ void FurnaceSignalsView::setTemperature(TerconData terconData)
                                                         .arg(QString::number(terconData.value,'f',1))
                                                         .arg(QChar(176)));
     }
-    else if (terconData.deviceNumber==5&&terconData.channel==5){
+    else if (terconData.id == "{c922039f-afed-4447-9a04-1067f27b2b49}"){
         if (sampleTemperatureLabel->isHidden()){
             sampleTemperatureLabel->show();
             sampleTemperatureValueLabel->show();
@@ -168,21 +134,42 @@ void FurnaceSignalsView::updateState(const QJsonObject & json)
     }
 }
 
+void FurnaceSignalsView::showMainRegulatorSettingsWidget()
+{
+    widgetRegulatorFurnace->setWindowTitle(tr("Основной нагреватель"));
+    widgetRegulatorFurnace->exec();
+}
+
+void FurnaceSignalsView::showAdditionalRegulatorSettingsWidget()
+{
+    additionalHeatersWidget->setWindowTitle(tr("Охранные нагреватели"));
+    additionalHeatersWidget->exec();
+}
+
+
+
 
 
 HeaterSignalsView::HeaterSignalsView(const QString & heaterName, QWidget *parent) :
     QWidget(parent)
 {
+    valuePresision_ = 1;
+
     name_ = heaterName;
     defaultColorOn1LegIndicator = QColor(0,255,0);
     defaultColorOn2LegIndicator = QColor(0,192,0);
     defaultColorOff1LegIndicator = QColor(0,28,0);
     defaultColorOff2LegIndicator = QColor(0,128,0);
 
+
+    QFont labelValueFont;
+    labelValueFont.setPointSize(20);
     statusHeaterLed = new QLedIndicator();
     statusHeaterLed->setCheckable(false);
+    statusHeaterLed->installEventFilter(this);
     heaterLabel = new QLabel(heaterName);
     temperatureLabel = new QLabel;
+    temperatureLabel->setFont(labelValueFont);
 
     QHBoxLayout * hLayout = new QHBoxLayout;
     hLayout->addWidget(statusHeaterLed);
@@ -232,7 +219,7 @@ HeaterSignalsView::HeaterSignalsView(const QString & heaterName, QWidget *parent
 
 void HeaterSignalsView::setTemperature(double temperature)
 {
-    temperatureLabel->setText(tr("%1%2С").arg(QString::number(temperature,'f',1)).arg(QChar(176)));
+    temperatureLabel->setText(tr("%1%2С").arg(QString::number(temperature,'f',valuePresision_)).arg(QChar(176)));
 }
 
 void HeaterSignalsView::updateState(const QJsonObject & json)
@@ -331,15 +318,15 @@ void HeaterSignalsView::updateState(const QJsonObject & json)
 void HeaterSignalsView::changeColorDeltaTemperatureLabel(double deltaTemperature)
 {
     double absDelta = qAbs(deltaTemperature);
-    if (absDelta <= 0.2){
+    if (absDelta <= 2/qPow(10,valuePresision_)){
         delta->setText(tr("<font color='green'>\u0394: %1%2С</font>")
-                       .arg(QString::number(deltaTemperature,'f',1)).arg(QChar(176)));
-    } else if (absDelta <= 1) {
+                       .arg(QString::number(deltaTemperature,'f',valuePresision_)).arg(QChar(176)));
+    } else if (absDelta <= 10/qPow(10,valuePresision_)) {
         delta->setText(tr("<font color='blue'>\u0394: %1%2С</font>")
-                       .arg(QString::number(deltaTemperature,'f',1)).arg(QChar(176)));
+                       .arg(QString::number(deltaTemperature,'f',valuePresision_)).arg(QChar(176)));
     } else {
         delta->setText(tr("<font color='red'>\u0394: %1%2С</font>")
-                       .arg(QString::number(deltaTemperature,'f',1)).arg(QChar(176)));
+                       .arg(QString::number(deltaTemperature,'f',valuePresision_)).arg(QChar(176)));
     }
 
 }
@@ -359,11 +346,26 @@ void HeaterSignalsView::setProgressBarText()
 
 bool HeaterSignalsView::eventFilter(QObject *obj, QEvent *event)
 {
-    if (obj == progressBar) {
-        if (event->type() == QEvent::MouseButtonPress) {
+    if (obj == progressBar && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent * mouseEvent = (QMouseEvent *)event;
+        if (mouseEvent->button()== Qt::LeftButton){
+            progressBarClicked();
+            return true;
+        }
+    }
+    if (obj == statusHeaterLed){
+        if (event->type() == QEvent::Leave) {
+            setCursor(Qt::ArrowCursor);
+            return true;
+
+        } else if (event->type() == QEvent::Enter){
+            setCursor(Qt::PointingHandCursor);
+            return true;
+
+        } else if (event->type() == QEvent::MouseButtonPress){
             QMouseEvent * mouseEvent = (QMouseEvent *)event;
             if (mouseEvent->button()== Qt::LeftButton){
-                progressBarClicked();
+                emit statusLedClicked();
                 return true;
             }
         }
@@ -375,5 +377,90 @@ void HeaterSignalsView::progressBarClicked()
 {
     leftTimeProgressBarViewMode=!leftTimeProgressBarViewMode;
     setProgressBarText();
+}
+
+
+
+
+
+CalorimeterSignalsView::CalorimeterSignalsView(QWidget *parent) :
+    QGroupBox(parent)
+{
+    QFont bigFont;
+    bigFont.setPointSize(10);
+    setFont(bigFont);
+
+    QFont labelValueFont;
+    labelValueFont.setPointSize(20);
+
+    setTitle(tr("Калориметрический блок"));
+    resistanceLabel = new QLabel(tr("Сопротивление МТС"));
+    resistanceLabel->hide();
+    resistanceValueLabel = new QLabel;
+    resistanceValueLabel->hide();
+    resistanceValueLabel->setFont(labelValueFont);
+    QHBoxLayout * sampleTemperatureLayout = new QHBoxLayout;
+    sampleTemperatureLayout->addWidget(resistanceLabel);
+    sampleTemperatureLayout->addStretch(1);
+    sampleTemperatureLayout->addWidget(resistanceValueLabel);
+
+    diffTemperatureLabel = new QLabel(tr("Диф. тем-ра термостата"));
+    diffTemperatureLabel->hide();
+    diffTemperatureValueLabel = new QLabel;
+    diffTemperatureValueLabel->hide();
+    diffTemperatureValueLabel->setFont(labelValueFont);
+    QHBoxLayout * furnaceInertBlockTemperatureLayout = new QHBoxLayout;
+    furnaceInertBlockTemperatureLayout->addWidget(diffTemperatureLabel);
+    furnaceInertBlockTemperatureLayout->addStretch(1);
+    furnaceInertBlockTemperatureLayout->addWidget(diffTemperatureValueLabel);
+
+    thermostatHeater = new HeaterSignalsView(tr("Термостат"));
+    thermostatHeater->setValuePresision(3);
+
+    QVBoxLayout * mainLayout = new QVBoxLayout;
+    mainLayout->addLayout(sampleTemperatureLayout);
+    mainLayout->addLayout(furnaceInertBlockTemperatureLayout);
+    mainLayout->addWidget(thermostatHeater);
+    setLayout(mainLayout);
+
+    widgetRegulatorThermostat = new WidgetRegulatorFurnace(this);
+    widgetRegulatorThermostat->setRegulator(Furnace::instance()->regulatorThermostat());
+
+    connect(thermostatHeater,SIGNAL(statusLedClicked()),this,SLOT(showThermostatRegulatorSettingsWidget()));
+}
+
+void CalorimeterSignalsView::setValue(TerconData terconData)
+{
+    if (terconData.id == "{802cdd57-b870-4cdb-a1c2-2e430c70981c}"){
+        thermostatHeater->setTemperature(terconData.value);
+    }
+
+    else if (terconData.id == "{41fada5a-879c-43ba-84d9-d565c0e03ead}"){
+        if (resistanceLabel->isHidden()){
+            resistanceLabel->show();
+            resistanceValueLabel->show();
+        }
+        resistanceValueLabel->setText(tr("%1 Ом").arg(QString::number(terconData.value,'f',3)));
+    }
+    else if (terconData.id == "{ed87c4c3-ce64-4809-ba55-9c06f5f20271}"){
+        if (diffTemperatureLabel->isHidden()){
+            diffTemperatureLabel->show();
+            diffTemperatureValueLabel->show();
+        }
+        diffTemperatureValueLabel->setText(tr("%1 мВ").arg(QString::number(terconData.value * 1000,'f',3)));
+    }
+}
+
+void CalorimeterSignalsView::updateState(const QJsonObject & json)
+{
+    if (json["sender"].toString()== "regulator-thermostat"){
+        thermostatHeater->updateState(json);
+    }
+}
+
+void CalorimeterSignalsView::showThermostatRegulatorSettingsWidget()
+{
+    widgetRegulatorThermostat->setWindowTitle(tr("Регулятор термостата"));
+    widgetRegulatorThermostat->exec();
 }
 

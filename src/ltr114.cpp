@@ -16,7 +16,6 @@ Ltr114::Ltr114(QObject *parent) :
             this,SIGNAL(message(QString,Shared::MessageLevel)),Qt::BlockingQueuedConnection);
     connect(ltr114Worker,SIGNAL(dataSend(TerconData)),
             this,SIGNAL(dataSend(TerconData)),Qt::BlockingQueuedConnection);
-    //connect(this,Ltr114::)
 }
 
 Ltr114::~Ltr114()
@@ -74,16 +73,6 @@ Ltr114Worker::Ltr114Worker(QObject *parent) :
     isStopAck = false;
     recvData = 0;
     procData = 0;
-
-    parameters_.roomTemperature = 30;
-    parameters_.averageCount = 1;
-    parameters_.filter = false;
-    parameters_.thermocoupleType = "A1";
-
-    if (parameters_.thermocoupleType == "A1")
-        offsetVoltRoomTemperature = convertTemperature2VoltTypeA1(parameters_.roomTemperature);
-    else if (parameters_.thermocoupleType == "K")
-        offsetVoltRoomTemperature = convertTemperature2VoltTypeK(parameters_.roomTemperature);
 }
 
 Ltr114Worker::~Ltr114Worker()
@@ -216,45 +205,36 @@ bool Ltr114Worker::start()
                 return false;
             }
 
-            TerconData dataCh2; // термопара основного нагреватель
-            dataCh2.channel=2;
-            dataCh2.deviceNumber=5;
-            dataCh2.unit='T';
-            dataCh2.value=convertVolt2TemperatureTypeA1( procData[1]*(1e+3) +offsetVoltRoomTemperature);
-
+            TerconData dataCh2; // термопара основного нагревателя
+            dataCh2.unit=tr("В");
+            dataCh2.id = "{ff98f69d-11cd-4553-8261-c338fe0e4a29}";
+            dataCh2.value=procData[1];
             emit dataSend(dataCh2);
 
-            //измерения термопар охранных нагреватели должны отправлться  в обработку после измерений термопар основного нагреватля
-            TerconData dataCh1; // термопара верхнего охр нагреватель
-            dataCh1.channel=1;
-            dataCh1.deviceNumber=5;
-            dataCh1.unit='T';
-            dataCh1.value=convertVolt2TemperatureTypeA1( procData[0]*(1e+3) +offsetVoltRoomTemperature);
+            //измерения термопар охранных нагреватели должны отправляться  в обработку после измерений термопар основного нагреватля
+            TerconData dataCh1; // термопара верхнего охр нагревателя
+            dataCh1.unit=tr("В");
+            dataCh1.id = "{89349bc0-7eab-49db-b86c-047bac3915ef}";
+            dataCh1.value=procData[0];
 
             emit dataSend(dataCh1);
 
-            TerconData dataCh3; // термопара нижнего охр нагреватель
-            dataCh3.channel=3;
-            dataCh3.deviceNumber=5;
-            dataCh3.unit='T';
-            dataCh3.value=convertVolt2TemperatureTypeA1( procData[2]*(1e+3) +offsetVoltRoomTemperature);
-
+            TerconData dataCh3; // термопара нижнего охр нагревателя
+            dataCh3.unit=tr("В");
+            dataCh3.id = "{f41b67da-dc68-4ee9-8d3c-b74f22368a05}";
+            dataCh3.value=procData[2];
             emit dataSend(dataCh3);
 
             TerconData dataCh4;
-            dataCh4.channel=4;
-            dataCh4.deviceNumber=5;
-            dataCh4.unit='T';
-            dataCh4.value=convertVolt2TemperatureTypeA1( procData[3]*(1e+3) +offsetVoltRoomTemperature);
-
+            dataCh4.unit=tr("В");
+            dataCh4.id = "{1bab9ffd-68df-459a-b21b-de569a211232}";
+            dataCh4.value=procData[3];
             emit dataSend(dataCh4);
 
             TerconData dataCh5;
-            dataCh5.channel=5;
-            dataCh5.deviceNumber=5;
-            dataCh5.unit='U';
-            dataCh5.value= procData[4]*(1e+3);
-
+            dataCh5.unit=tr("В");
+            dataCh5.id = "{0986e158-6266-4d5e-8498-fa5c3cd84bbe}";
+            dataCh5.value= procData[4];
             emit dataSend(dataCh5);
 
 
@@ -299,53 +279,4 @@ bool Ltr114Worker::stop()
 void Ltr114Worker::stopWorker()
 {
     isStopAck = true;
-}
-
-long double Ltr114Worker::convertVolt2TemperatureTypeA1(double value){
-    long double temperature=0.9643027
-            + 79.495086*value
-            - 4.9990310*pow(value,2)
-            + 0.6341776*pow(value,3)
-            - 4.7440967e-2*pow(value,4)
-            + 2.1811337e-3*pow(value,5)
-            - 5.8324228e-5*pow(value,6)
-            + 8.2433725e-7*pow(value,7)
-            - 4.5928480e-9*pow(value,8);
-    return temperature;
-}
-
-long double Ltr114Worker::convertTemperature2VoltTypeA1(double temperature){
-    long double volt =7.1564735E-04
-            + 1.1951905E-02*temperature
-            + 1.6672625E-05*pow(temperature,2)
-            - 2.8287807E-08*pow(temperature,3)
-            + 2.8397839E-11*pow(temperature,4)
-            - 1.8505007E-14*pow(temperature,5)
-            + 7.3632123E-18*pow(temperature,6)
-            - 1.6148878E-21*pow(temperature,7)
-            + 1.4901679E-25*pow(temperature,8);
-    return volt;
-}
-
-long double Ltr114Worker::convertVolt2TemperatureTypeK(double value){
-    long double temperature = -0.12
-            + 25.64975235588457*value
-            - 0.8055076713568498*pow(value,2)
-            + 0.1956119653603405*pow(value,3)
-            - 2.2808773974444e-2*pow(value,4)
-            + 1.493718627979179e-3*pow(value,5)
-            - 5.965771945226433e-5*pow(value,6)
-            + 1.489119820403751e-6*pow(value,7)
-            - 2.269922703788692e-8*pow(value,8)
-            + 1.933261352900763e-10*pow(value,9)
-            - 7.049691433910994e-13*pow(value,10);
-    return temperature;
-}
-
-long double Ltr114Worker::convertTemperature2VoltTypeK(double temperature){
-    /*from 0 grad C to 35 grad C*/
-    long double volt =0
-            + 0.0395*temperature
-            + 2E-05*pow(temperature,2);
-    return volt;
 }

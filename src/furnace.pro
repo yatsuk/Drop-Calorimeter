@@ -54,7 +54,8 @@ SOURCES += main.cpp\
     LTR/ltr114api.cpp \
     LTR/ltrapi.cpp \
     device.cpp \
-    filter.cpp
+    filter.cpp \
+    data_manager.cpp
 
 HEADERS  += shared.h \
     parameters.h \
@@ -110,7 +111,8 @@ HEADERS  += shared.h \
     LTR/ltrapidefine.h \
     LTR/ltrapitypes.h \
     device.h \
-    filter.h
+    filter.h \
+    data_manager.h
 
 
 win32 {

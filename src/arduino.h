@@ -23,15 +23,16 @@ signals:
 public slots:
     void waitDrop();
     void enableLed(bool enable);
-    void setWaitDropEnable();
 
 private slots:
     void readData();
-    void delayDrop();
 
 private:
+    void parseArduinoMessage(const QString & msg);
+
     bool waitDropEnable;
     QSerialPort * port;
+    QString arduinoMessage;
 
 };
 

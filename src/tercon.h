@@ -5,6 +5,7 @@
 #include <QSerialPort>
 #include <QThread>
 #include <QJsonObject>
+#include <QJsonArray>
 #include "device.h"
 #include "terconData.h"
 #include "shared.h"
@@ -33,8 +34,7 @@ signals:
 private:
     QSerialPort * port;
     QByteArray recvBytes;
-    int deviceNumber_ = -1;
-    QString portName_;
+    QJsonArray channelArray;
 };
 
 class Tercon : public Device
@@ -43,26 +43,19 @@ class Tercon : public Device
 public:
     Tercon();
     ~Tercon();
-    void setPortName(const QString & portName);
-    void setDeviceNumber(int number);
-    bool startAck();
-    bool stopAck();
-    QString portName();
 
-    QString description;
-
-
+public slots:
+    bool start();
+    bool stop();
+    bool connectDevice();
+    bool disconnectDevice();
 
 signals:
-    void dataSend(TerconData data);
-    //void message(const QString & msg, Shared::MessageLevel msgLevel);
     void operate();
     void finishOperate();
     void sendParameters(const QJsonObject & json);
 
 private:
-    int deviceNumber_ = -1;
-    QString portName_;
     QThread workerThread_;
 };
 

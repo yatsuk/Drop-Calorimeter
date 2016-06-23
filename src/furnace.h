@@ -5,6 +5,9 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QSettings>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QJsonArray>
 #include "tercon.h"
 #include "diagnostic.h"
 #include "shared.h"
@@ -13,7 +16,7 @@
 #include "adc.h"
 #include "ltr43.h"
 #include "ltr114.h"
-#include "dataRecorder.h"
+#include "data_manager.h"
 #include "parameters.h"
 #include "Devices.h"
 #include "device.h"
@@ -27,7 +30,7 @@ class Furnace : public QObject
 public:
     explicit Furnace(QObject *parent = 0);
     Regulator * regulatorFurnace();
-    Regulator * regulatorTermostat();
+    Regulator * regulatorThermostat();
     Regulator * regulatorUpHeater();
     Regulator * regulatorDownHeater();
     Diagnostic * diagnostic();
@@ -36,6 +39,7 @@ public:
     SampleLock * getSampleLock();
     qint64 getElapsedTime();
     static Furnace * instance();
+    QJsonObject getSettings();
     
 signals:
     void AdcTerconDataSend(TerconData);
@@ -44,8 +48,6 @@ signals:
     
 public slots:
     void run();
-    void startTercon();
-    void stopTercon();
     void beginDataRecord();
     void endDataRecord();
     void turnOnCalibrationHeater(int duration);
@@ -56,7 +58,7 @@ public slots:
 
 private slots:
     void setDacValueFurnaceChannel(double value);
-    void setDacValueThermostateChannel(double value);
+    void setDacValueThermostatChannel(double value);
     void setDacValueUpHeaterChannel(double value);
     void setDacValueDownHeaterChannel(double value);
     void writeFurnaceRegulatorLog(const QString & logString);
@@ -64,27 +66,24 @@ private slots:
     void writeUpHeaterRegulatorLog(const QString & logString);
     void writeDownHeaterRegulatorLog(const QString & logString);
     void stopDacFurnaceChannel();
-    void stopDacThermostateChannel();
+    void stopDacThermostatChannel();
     void stopDacUpHeaterChannel();
     void stopDacDownHeaterChannel();
     void terconDataReceive(TerconData data);
     void receiveData(TerconData data);
     bool connectTercon();
-    void writeFile(TerconData data);
+    bool destroyDevices();
     void saveSettings();
     void loadSettings();
     void saveJSONSettings();
+    void loadJSONSettings();
 
 private:
-    double convertU2C (double U);
-
     QSettings * settings;
-    DataRecorder * dataRecorder;
+    DataManager * dataManager;
 
     Arduino * arduino;
-    Tercon * tercon;
-    Tercon * terconThermostat;
-    Tercon * terconCalibrationHeater;
+
     Regulator * regulatorOfFurnace;
     Regulator * regulatorOfThermostat;
     Regulator * regulatorUpHeater_;
@@ -92,6 +91,7 @@ private:
     Covers * covers;
     SafetyValve * safetyValve;
     SampleLock * sampleLock;
+    DropDevice * dropDevice;
     Ltr43 * ltr43;
     Ltr114 * ltr114;
     DAC * dac;
@@ -102,6 +102,8 @@ private:
     static Furnace * g_furnace;
 
     QVector <Device *> devices;
+
+    QJsonObject settings_;
     
 };
 

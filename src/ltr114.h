@@ -34,15 +34,6 @@ private slots:
     bool configure();
 
 private:
-    long double convertVolt2TemperatureTypeA1(double value);
-    long double convertTemperature2VoltTypeA1(double temperature);
-    long double convertVolt2TemperatureTypeK(double value);
-    long double convertTemperature2VoltTypeK(double temperature);
-
-
-    AdcParameters parameters_;
-    double offsetVoltRoomTemperature;
-
     bool isConfugurationOk;
     bool isStart;
     bool isWaitTimeout;

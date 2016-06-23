@@ -24,7 +24,6 @@ void ChartWidget::initGraph()
     yAxesClicked = false;
 
     plot = new AdvancedQCustomPlot;
-    plot->xAxis->setLabel(tr("время, сек"));
     plot->legend->setVisible(true);
     plot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignLeft|Qt::AlignBottom);
     //plot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectAxes |
@@ -43,43 +42,48 @@ void ChartWidget::setPlotTitle(const QString & text)
     plot->plotLayout()->addElement(0, 0, new QCPPlotTitle(plot, text));
 }
 
-void ChartWidget::setYLeftAxisTitle (const QString & title)
+void ChartWidget::addSignalFromJSON (const QJsonObject & graphSetting)
 {
-    plot->yAxis->setLabel(title);
-}
-
-void ChartWidget::setYRigthAxisTitle (const QString & title)
-{
-    plot->yAxis2->setLabel(title);
-}
-
-void ChartWidget::addSignal(int devNumber, int chNumber, bool leftYAxis, QColor color, const QString &legend)
-{
-
-    if (!leftYAxis){
-        plot->addGraph(plot->xAxis,plot->yAxis2);
-        plot->yAxis2->setVisible(true);
-    } else {
-        plot->addGraph();
-    }
-
-
-    plot->graph()->setPen(QPen(color));
-    plot->graph()->setName(legend);
 
     GraphData2 graphData;
-    graphData.deviceNumber = devNumber;
-    graphData.channelNumber = chNumber;
-    graphData.leftYAxis = leftYAxis;
+
+    if (graphSetting["YAxes"].toString()==plot->yAxis2->objectName()){
+        plot->addGraph(plot->xAxis,plot->yAxis2);
+        graphData.leftYAxis = true;
+    } else {
+        plot->addGraph();
+        graphData.leftYAxis = false;
+    }
+
+    plot->graph()->setPen(QPen(QColor(graphSetting["color"].toString())));
+    plot->graph()->setName(graphSetting["title"].toString());
+
+    graphData.sourceId = graphSetting["source"].toString();
+    graphData.multiplier = graphSetting["multiplier"].toInt();
     graphsData.append(graphData);
 
     plot->replot();
 }
 
+void ChartWidget::addAxesFromJSON (const QJsonObject & axesSetting)
+{
+    if (axesSetting["orientation"].toString() == "left"){
+        plot->yAxis->setObjectName(axesSetting["id"].toString());
+        plot->yAxis->setLabel(axesSetting["title"].toString());
+    } else if (axesSetting["orientation"].toString() == "bottom"){
+        plot->xAxis->setObjectName(axesSetting["id"].toString());
+        plot->xAxis->setLabel(axesSetting["title"].toString());
+    } else if (axesSetting["orientation"].toString() == "right"){
+        plot->yAxis2->setObjectName(axesSetting["id"].toString());
+        plot->yAxis2->setLabel(axesSetting["title"].toString());
+        plot->yAxis2->setVisible(true);
+    }
+}
+
 void ChartWidget::addDataTercon(TerconData terconData){
     for (int i = 0; i < graphsData.size(); ++i){
-        if((terconData.channel==graphsData[i].channelNumber)&&(terconData.deviceNumber==graphsData[i].deviceNumber)){
-            plot->graph(i)->addData(terconData.time/1000.0, terconData.value);
+        if(terconData.id==graphsData[i].sourceId){
+            plot->graph(i)->addData(terconData.time/1000.0, terconData.value*graphsData[i].multiplier);
             if (!plot->isZoomed()){
                 plot->rescaleAxes();
             }

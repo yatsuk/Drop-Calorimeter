@@ -1,7 +1,7 @@
 #ifndef ADDITIONALHEATERSWIDGET_H
 #define ADDITIONALHEATERSWIDGET_H
 
-#include <QWidget>
+#include <QDialog>
 #include <QGroupBox>
 #include <QLabel>
 #include <QPushButton>
@@ -85,7 +85,7 @@ private:
 
 };
 
-class AdditionalHeatersWidget : public QWidget
+class AdditionalHeatersWidget : public QDialog
 {
     Q_OBJECT
 public:

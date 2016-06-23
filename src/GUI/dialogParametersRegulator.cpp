@@ -27,7 +27,7 @@ void DialogParametersRegulator::acceptButtonClicked()
 
     newParameters.averageCount = 1;
     newParameters.averagePowerCount = 1;
-    newParameters.procentPerSec = 0.5;
+    newParameters.procentPerSec = 1;
     newParameters.maxProportionalValue = 20;
 
     emit parameters(newParameters);

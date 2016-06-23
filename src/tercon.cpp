@@ -19,7 +19,7 @@ Tercon::Tercon()
 
 Tercon::~Tercon()
 {
-    stopAck();
+    stop();
     workerThread_.quit();
     if(!workerThread_.wait(5000)){
         workerThread_.terminate();
@@ -27,34 +27,30 @@ Tercon::~Tercon()
     }
 }
 
-bool Tercon::startAck(){
-    QJsonObject parameters
-    {
-        {"deviceNumber", deviceNumber_},
-        {"portName", portName_}
-    };
-    emit sendParameters(parameters);
+bool Tercon::start()
+{
+    return true;
+}
+
+bool Tercon::stop()
+{
+    return true;
+}
+
+bool Tercon::connectDevice()
+{
+    emit sendParameters(parameters_);
     emit operate();
 
     return true;
 }
 
-bool Tercon::stopAck(){
+bool Tercon::disconnectDevice()
+{
     emit finishOperate();
     return true;
 }
 
-void Tercon::setPortName(const QString &portName){
-    portName_ = portName;
-}
-
-QString Tercon::portName(){
-    return portName_;
-}
-
-void Tercon::setDeviceNumber(int number){
-    deviceNumber_ = number;
-}
 
 
 
@@ -89,13 +85,13 @@ void TerconWorker::finishWork()
 
 void TerconWorker::setParameters(const QJsonObject & parameters)
 {
-    deviceNumber_ = parameters["deviceNumber"].toInt();
-    portName_ = parameters["portName"].toString();
-    port->setPortName(portName_);
+
+    channelArray = parameters["channels"].toArray();
+    port->setPortName(parameters["connectionSettings"].toObject()["portName"].toString());
 }
 
 void TerconWorker::convertData(QByteArray strData){
-    TerconData data;
+
     bool convertIsOK=false;
 
     strData = strData.simplified();
@@ -109,6 +105,7 @@ void TerconWorker::convertData(QByteArray strData){
         return;
     }
 
+    TerconData data;
     data.value = tempStr.toDouble(&convertIsOK);
     if (!convertIsOK){
         emit message(tr("Ошибка чтения данных Теркона\n"
@@ -116,18 +113,27 @@ void TerconWorker::convertData(QByteArray strData){
         return;
     }
 
-    data.unit  = unitAndNumberData.at(unitAndNumberData.size()-1);
-    unitAndNumberData.chop(1);
+    if (unitAndNumberData.at((unitAndNumberData.size() - 1)) == 'U'){
+        data.value /= 1000;
+    }
 
-    data.channel = unitAndNumberData.toShort(&convertIsOK);
+    unitAndNumberData.chop(1);
+    int channelNumber = unitAndNumberData.toInt(&convertIsOK);
     if (!convertIsOK){
         emit message(tr("Ошибка чтения данных Теркона\n"
                         "(неверный номер канала): ")+strData+".",Shared::warning);
         return;
     }
-    data.deviceNumber = deviceNumber_;
 
-    emit dataSend(data);
+    for (int i = 0; i < channelArray.size(); ++i){
+        QJsonObject channel = channelArray[i].toObject();
+        if (channel["channelNumber"].toInt() == channelNumber){
+            data.id = channel["id"].toString();
+            data.unit = channel["unit"].toString();
+            emit dataSend(data);
+            break;
+        }
+    }
 }
 
 void TerconWorker::extractData(){

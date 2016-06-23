@@ -6,31 +6,42 @@ Arduino::Arduino(QObject *parent) :
     QObject(parent)
 {
     port = new QSerialPort(this);
-    waitDropEnable = false;
     connect(port,SIGNAL(readyRead()),this,SLOT(readData()));
 }
 
 Arduino::~Arduino()
 {
-    stopAck();
+
 }
 
 void Arduino::readData(){
-    QString str = port->readAll();
-    qDebug() << str;
-    if (str.startsWith("drop")){
-        QTimer::singleShot(500,this,SLOT(delayDrop()));
-    } else if (str.startsWith("fail: drop timeout")){
-        emit message(tr("Пролет ампулы не зафиксирован."),Shared::warning);
-        QTimer::singleShot(500,this,SLOT(delayDrop()));
-    }
+    arduinoMessage.append(port->readAll());
+    while(true){
+        int endStrPos = arduinoMessage.indexOf('\n');
+        if (endStrPos== -1) break;
 
+        parseArduinoMessage(arduinoMessage.left(endStrPos).trimmed());
+        arduinoMessage.remove(0, endStrPos + 1);
+    }
 }
 
-void Arduino::delayDrop()
+void Arduino::parseArduinoMessage(const QString & msg)
 {
-    emit message(tr("Ампула сброшена."),Shared::information);
-    emit droped();
+    if (msg == "drop"){
+        emit message(tr("Ампула сброшена."),Shared::information);
+        QTimer::singleShot(500,this,SIGNAL(droped()));
+    } else if (msg == "fail: drop timeout"){
+        emit message(tr("Пролет ампулы не зафиксирован."),Shared::warning);
+        emit droped();
+    } else if (msg == "led_pin, HIGH"){
+        emit message(tr("Светодиод системы детектирования пролета ампулы включен."),Shared::information);
+    } else if (msg == "led_pin, LOW"){
+        emit message(tr("Светодиод системы детектирования пролета ампулы выключен."),Shared::information);
+    } else if (msg == "ADC start"){
+        emit message(tr("Ожидание сброса ампулы."),Shared::information);
+    } else {
+        emit message(tr("Arduino message: %1").arg(msg),Shared::information);
+    }
 }
 
 void Arduino::enableLed(bool enable)
@@ -39,33 +50,22 @@ void Arduino::enableLed(bool enable)
         return;
 
     if (enable){
-        emit message(tr("Светодиод системы детектирования пролета ампулы включен."),Shared::information);
         port->write("2\r\n");
     } else {
-        emit message(tr("Светодиод системы детектирования пролета ампулы выключен."),Shared::information);
         port->write("3\r\n");
     }
 }
 
 void Arduino::waitDrop()
-{
-    if (waitDropEnable){
-        if (port->isOpen()){
-            port->write("1\r\n");
-            waitDropEnable = false;
-        }
-    }
-}
-
-void Arduino::setWaitDropEnable()
-{
-    waitDropEnable = true;
+{  
+    if (port->isOpen())
+        port->write("1\r\n");
 }
 
 bool Arduino::startAck(){
     port->setPortName("COM3");
     if(!port->open(QIODevice::ReadWrite)){
-        qDebug() << "open fail";
+        emit message(tr("Arduino: Ошибка открытия порта COM3"),Shared::warning);
     }
 
     port->setBaudRate(QSerialPort::Baud115200);

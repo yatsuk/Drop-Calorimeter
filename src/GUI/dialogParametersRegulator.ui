@@ -44,8 +44,14 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="propSpinBox">
+          <property name="decimals">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <double>500.000000000000000</double>
+          </property>
           <property name="singleStep">
-           <double>0.010000000000000</double>
+           <double>0.100000000000000</double>
           </property>
          </widget>
         </item>
@@ -148,6 +154,9 @@
          <widget class="QDoubleSpinBox" name="maxIntegSpinBox">
           <property name="suffix">
            <string/>
+          </property>
+          <property name="decimals">
+           <number>1</number>
           </property>
          </widget>
         </item>

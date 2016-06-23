@@ -11,16 +11,18 @@
 #include <QJsonObject>
 #include <GUI\qledindicator.h>
 #include "terconData.h"
+#include "widgetRegulatorFurnace.h"
+#include "additionalHeatersWidget.h"
 
 class FurnaceSignalsView;
+class CalorimeterSignalsView;
 class HeaterSignalsView;
+
 class SignalsView : public QWidget
 {
     Q_OBJECT
 public:
     explicit SignalsView(QWidget *parent = 0);
-    void addSignal(const QString & signalName);
-
     
 signals:
     
@@ -29,9 +31,8 @@ public slots:
     void updateState(const QJsonObject & json);
 
 private:
-    QVBoxLayout * layout;
-    QVector <QLabel *> labels;
     FurnaceSignalsView * furnaceSignalsView;
+    CalorimeterSignalsView * calorimeterSignalsView;
 
 };
 
@@ -40,9 +41,14 @@ class FurnaceSignalsView : public QGroupBox
     Q_OBJECT
 public:
     explicit FurnaceSignalsView(QWidget *parent = 0);
+
 public slots:
     void updateState(const QJsonObject & json);
     void setTemperature(TerconData terconData);
+
+private slots:
+    void showMainRegulatorSettingsWidget();
+    void showAdditionalRegulatorSettingsWidget();
 
 private:   
     HeaterSignalsView * mainHeater;
@@ -52,6 +58,30 @@ private:
     QLabel * furnaceInertBlockTemperatureLabel;
     QLabel * sampleTemperatureValueLabel;
     QLabel * furnaceInertBlockTemperatureValueLabel;
+    WidgetRegulatorFurnace * widgetRegulatorFurnace;
+    AdditionalHeatersWidget * additionalHeatersWidget;
+};
+
+class CalorimeterSignalsView : public QGroupBox
+{
+    Q_OBJECT
+public:
+    explicit CalorimeterSignalsView(QWidget *parent = 0);
+
+public slots:
+    void updateState(const QJsonObject & json);
+    void setValue(TerconData terconData);
+
+public slots:
+    void showThermostatRegulatorSettingsWidget();
+
+private:
+    HeaterSignalsView * thermostatHeater;
+    QLabel * resistanceLabel;
+    QLabel * resistanceValueLabel;
+    QLabel * diffTemperatureLabel;
+    QLabel * diffTemperatureValueLabel;
+    WidgetRegulatorFurnace * widgetRegulatorThermostat;
 };
 
 class HeaterSignalsView : public QWidget
@@ -59,12 +89,17 @@ class HeaterSignalsView : public QWidget
     Q_OBJECT
 public:
     explicit HeaterSignalsView(const QString & heaterName, QWidget *parent = 0);
+
 public slots:
     void updateState(const QJsonObject & json);
     void setTemperature(double temperature);
+    void setValuePresision(int valuePresision) {valuePresision_ = valuePresision;}
 
-public slots:
+private slots:
     void progressBarClicked();
+
+signals:
+    void statusLedClicked();
 
 private:
     void changeColorDeltaTemperatureLabel(double deltaTemperature);
@@ -90,6 +125,8 @@ private:
     double durationTimeProgress;
     double elapsedTimeProgress;
     bool leftTimeProgressBarViewMode;
+
+    int valuePresision_;
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event);

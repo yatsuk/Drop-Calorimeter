@@ -201,7 +201,7 @@ void AdditionalHeaterGroupBox::settingsRegulatorButtonClicked()
 
 
 AdditionalHeatersWidget::AdditionalHeatersWidget(QWidget *parent) :
-    QWidget(parent)
+    QDialog(parent)
 {   
     QFont bigBoldFont;
     bigBoldFont.setPointSize(16);

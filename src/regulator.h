@@ -30,7 +30,6 @@ signals:
     void currentTemperatureSegment(int);
     void manualMode();
     void regulatorLogData(const QString & logString);
-    void setPointTemperature(TerconData data);
     void updateParameters();
     void state(const QJsonObject & json);
     
@@ -68,7 +67,6 @@ private:
     double currentValueADC;
 
     double computePowerProg(double temperature);
-    double averageValue(const QVector <double> &valueArray);
     bool isEndSegment(double currentTemperature,int segmentNumber);
     void clearRegulator();
     QString convertModeToString(Shared::RegulatorMode regulatorMode);
@@ -85,13 +83,6 @@ private:
     double integral;
     int count;
     bool firstPoint;
-    QVector <double> waveform;
-    QVector <double> control;
-    QVector <double> I;
-    QVector <double> D;
-    QVector <double> averageArray;
-    QVector <double> averagePowerArray;
-    QVector <double> powerArray;
     double prevError;
     QTextStream outFileStream;    
     double power;

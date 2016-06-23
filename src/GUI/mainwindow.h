@@ -5,10 +5,9 @@
 #include <QTabWidget>
 #include <QPushButton>
 #include <QTextEdit>
-#include "widgetRegulatorFurnace.h"
+#include <QJsonObject>
 #include "logView.h"
 #include "calibrationHeaterWidget.h"
-#include "additionalHeatersWidget.h"
 #include "chartWidget.h"
 #include "furnace.h"
 #include "coversAndCalHeaterWidget.h"
@@ -30,6 +29,7 @@ public slots:
 private slots:
     void beginDataRecordClicked();
     void endDataRecordClicked();
+    void createPlots(const QJsonObject & settings);
 
 protected:
     void closeEvent(QCloseEvent *event);
@@ -40,20 +40,15 @@ private:
     QTabWidget * measurerTabs;
     QPushButton * beginDataRecordButton;
     QPushButton * endDataRecordButton;
-    WidgetRegulatorFurnace * widgetRegulatorFurnace;
-    WidgetRegulatorFurnace * widgetRegulatorThermostat;
-    AdditionalHeatersWidget * additionalHeatersWidget;
     SignalsView * signalsView;
     LogView * logView;
     CoversAndCalHeaterWidget * coversAndCalHeaterWidget;
-    ChartWidget * temperatureFurnace;
-    ChartWidget * temperatureSample;
-    ChartWidget * resistance;
-    ChartWidget * calibrationHeater;
-    ChartWidget * temperatureThermostat;
-    ChartWidget * difTemperatureThermostat;
+
+    QVector <ChartWidget *> plots;
 
     Furnace * furnace;
+
+    bool isExperimentRecordStart;
 };
 
 #endif // MAINWINDOW_H

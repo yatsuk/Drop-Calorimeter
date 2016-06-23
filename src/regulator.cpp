@@ -40,7 +40,6 @@ Regulator::~Regulator(){
 
 void Regulator::smoothOff(){
     emit manualMode();
-    power = powerArray.at(powerArray.count()-2);
     smoothOffTimer->start(1000);
     state_["mode"]="manual";
     prepareAndSendState();
@@ -83,38 +82,24 @@ double Regulator::computePowerProg(double temperature){
     return 0;
 }
 
-double Regulator::averageValue(const QVector<double> &valueArray){
-    double averageValue=0;
-    int averageSize = valueArray.size();
-    for(int i =0; i<averageSize;++i)
-        averageValue+=valueArray.at(i);
-    averageValue/=averageSize;
-    return averageValue;
-}
-
 void Regulator::calculatePower(double value){  
-    waveform.append(value);
-    averageArray.push_back(value);
-    if (averageArray.size()>parameters_.averageCount)
-        averageArray.pop_front();
-
-    double average = averageValue(averageArray);
     double error = setPoint - value;
 
     if(!firstPoint)
         derivative = error - prevError;
 
     prevError = error;
-    D.append(derivative);
 
     if (qAbs((integral+error))*parameters_.gI<parameters_.maxIntegralValue)
         integral += error;
 
-
-    I.append(integral);
     power = parameters_.offset + (error*parameters_.gP)+(derivative*parameters_.gD)+(integral*parameters_.gI);
-    if (power>parameters_.maxPower)power = parameters_.maxPower;
-    else if (power < parameters_.minPower)power = parameters_.minPower;
+    if (power>parameters_.maxPower){
+        power = parameters_.maxPower;
+        integral -= error;
+    } else if (power < parameters_.minPower){
+        power = parameters_.minPower;
+    }
 
 
     if ((power-prevPower)>parameters_.procentPerSec)
@@ -122,13 +107,11 @@ void Regulator::calculatePower(double value){
     else if ((power-prevPower)<(-1*parameters_.procentPerSec))
         power=prevPower-parameters_.procentPerSec;
 
-    powerArray.append(power);
     prevPower = power;
     firstPoint = false;
 
-    emit setPointTemperature(TerconData(100,0,setPoint));
     emit outPower(power);
-    emit regulatorLogData(QString("%1\t%2\t%3\t%4\t%5\t%6\t%7\r\n").arg(value).arg(average).arg(error).arg(power).arg(error*parameters_.gP).arg(integral*parameters_.gI).arg(derivative*parameters_.gD));
+    emit regulatorLogData(QString("%1\t%3\t%4\t%5\t%6\t%7\r\n").arg(value).arg(error).arg(power).arg(error*parameters_.gP).arg(integral*parameters_.gI).arg(derivative*parameters_.gD));
 
     state_["value"]=value;
     state_["delta"]=error;

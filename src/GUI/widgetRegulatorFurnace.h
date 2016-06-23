@@ -1,7 +1,7 @@
 #ifndef WIDGETREGULATORFURNACE_H
 #define WIDGETREGULATORFURNACE_H
 
-#include <QWidget>
+#include <QDialog>
 #include <QPushButton>
 #include <QLabel>
 #include <GUI\qledindicator.h>
@@ -13,7 +13,7 @@
 #include "dialogParametersRegulator.h"
 #include "regulator.h"
 
-class WidgetRegulatorFurnace : public QWidget
+class WidgetRegulatorFurnace : public QDialog
 {
     Q_OBJECT
 public:

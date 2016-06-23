@@ -2,124 +2,198 @@
 #include "shared.h"
 #include <QDir>
 #include <QDate>
+#include <QVector>
+#include <QPair>
+#include <QMessageBox>
 #include <QDebug>
 
-DataRecorder::DataRecorder(QObject *parent) :
-    QObject(parent)
+DataRecorder::DataRecorder(QObject *parent) : QObject(parent)
 {
-    logFile = 0;
-    dataFile = 0;
-    regulatorFurnaceFile = 0;
-    regulatorThermostatFile = 0;
-    regulatorUpHeaterFile = 0;
-    regulatorDownHeaterFile = 0;
-    mainSignalsFile = 0;
-    thermostatSignalsFile = 0;
-    calibrationHeaterFile = 0;
 
-
-    path_=createPath();
-    createFiles(path_);
-    recordEnabled = false;
 }
 
 DataRecorder::~DataRecorder()
 {
-    if (logFile)
-        logFile->close();
-    if (dataFile)
-        dataFile->close();
-    if (regulatorFurnaceFile)
-        regulatorFurnaceFile->close();
-    if (regulatorThermostatFile)
-        regulatorThermostatFile->close();
-    if (regulatorUpHeaterFile)
-        regulatorUpHeaterFile->close();
-    if (regulatorDownHeaterFile)
-        regulatorDownHeaterFile->close();
 
-    delete logFile;
-    delete dataFile;
-    delete regulatorFurnaceFile;
-    delete regulatorThermostatFile;
-    delete regulatorUpHeaterFile;
-    delete regulatorDownHeaterFile;
-    delete mainSignalsFile;
-    delete thermostatSignalsFile;
-    delete calibrationHeaterFile;
 }
 
-void DataRecorder::beginRecord()
+DataRecorder * DataRecorder::createDataRecorderFromJSON(const QJsonObject &parameters)
 {
-    recordEnabled = true;
-    static int fileCount = 1;
-
-    mainSignalsFile = new QFile(path_+"mainSignals_"+QString::number(fileCount)+".txt");
-    if(mainSignalsFile->open(QIODevice::WriteOnly))
-        mainSignalsFile->write("Time(sec)\tResistance(Omh)\tSampleTemperature(mV)\r\n");
-
-    thermostatSignalsFile = new QFile(path_+"thermostatSignals_"+QString::number(fileCount)+".txt");
-    if(thermostatSignalsFile->open(QIODevice::WriteOnly))
-        thermostatSignalsFile->write("Time(sec)\tDiffTemperature(mV)\tThermostatTemperature(gr C)\r\n");
-
-    calibrationHeaterFile = new QFile(path_+"calibrHeaterSignals_"+QString::number(fileCount)+".txt");
-    if(calibrationHeaterFile->open(QIODevice::WriteOnly))
-        calibrationHeaterFile->write("Time(sec)\tCalibrHeaterI(mV)\tCalibrHeaterV(mV)\r\n");
-
-    fileCount++;
-}
-
-void DataRecorder::endRecord()
-{
-    recordEnabled = false;
-    mainSignalsFile->close();
-    thermostatSignalsFile->close();
-    calibrationHeaterFile->close();
-}
-
-void DataRecorder::writeFile(const QString &data, Shared::FileType fileType)
-{
-    if ((fileType==Shared::logFile)&&logFile->isOpen()){
-        logFile->write(data.toLocal8Bit());
-        logFile->flush();
-    }
-    else if ((fileType==Shared::dataFile)&&dataFile->isOpen()){
-        dataFile->write(data.toLatin1());
-        dataFile->flush();
-    }
-    else if ((fileType==Shared::regulatorFurnaceFile)&&regulatorFurnaceFile->isOpen()){
-        regulatorFurnaceFile->write(data.toLatin1());
-        regulatorFurnaceFile->flush();
-    }
-    else if ((fileType==Shared::regulatorThermostatFile)&&regulatorThermostatFile->isOpen()){
-        regulatorThermostatFile->write(data.toLatin1());
-        regulatorThermostatFile->flush();
-    }
-    else if ((fileType==Shared::regulatorUpHeaterFile)&&regulatorUpHeaterFile->isOpen()){
-        regulatorUpHeaterFile->write(data.toLatin1());
-        regulatorUpHeaterFile->flush();
-    }
-    else if ((fileType==Shared::regulatorDownHeaterFile)&&regulatorDownHeaterFile->isOpen()){
-        regulatorDownHeaterFile->write(data.toLatin1());
-        regulatorDownHeaterFile->flush();
-    }
-    if (recordEnabled){
-        if ((fileType==Shared::mainSignalsFile)&&mainSignalsFile->isOpen()){
-            mainSignalsFile->write(data.toLatin1());
-            mainSignalsFile->flush();
+    DataRecorder * dataRecorder = 0;
+    if (!parameters.isEmpty()){
+        if (parameters["type"].toString()=="File"){
+            dataRecorder = new FileRecorder;
         }
-        else if ((fileType==Shared::thermostatSignalsFile)&&thermostatSignalsFile->isOpen()){
-            thermostatSignalsFile->write(data.toLatin1());
-            thermostatSignalsFile->flush();
-        }
-        else if ((fileType==Shared::calibrationHeaterFile)&&calibrationHeaterFile->isOpen()){
-            calibrationHeaterFile->write(data.toLatin1());
-            calibrationHeaterFile->flush();
+        if (dataRecorder){
+            dataRecorder->setObjectName(parameters["id"].toString());
+            dataRecorder->setSetting(parameters);
         }
     }
+    return dataRecorder;
 }
 
-QString DataRecorder::createPath()
+
+
+
+
+QString FileRecorder::path_ = "";
+
+FileRecorder::FileRecorder()
+{
+    file = 0;
+    if(path_.isEmpty())
+        path_ = createPath();
+}
+
+FileRecorder::~FileRecorder()
+{
+    if (file && file->isOpen()){
+        file->close();
+    }
+
+    delete file;
+}
+
+void FileRecorder::setSetting(const QJsonObject &parameters)
+{
+    QJsonObject fileSettings = parameters["settings"].toObject();
+    if(fileSettings.isEmpty())return;
+
+    file = new QFile(path_ + fileSettings["fileName"].toString() + "."
+            + fileSettings["fileExtension"].toString());
+
+    QJsonArray columnsInfo = fileSettings["columns"].toArray();
+    for (int i = 0; i < columnsInfo.size(); ++i) {
+        QJsonObject columnInfoObject = columnsInfo[i].toObject();
+        ColumnInfo columnInfo;
+        columnInfo.precision = -1;
+        columnInfo.isSetData = false;
+        columnInfo.idSource = columnInfoObject["source"].toString();
+        columnInfo.title = columnInfoObject["title"].toString();
+        if (columnInfoObject["type"].toString()=="Value"){
+            columnInfo.type = ColumnInfo::Value;
+            columnInfo.multiplier = columnInfoObject["multiplier"].toDouble();
+            columnInfo.precision = columnInfoObject["precision"].toInt();
+        } else if (columnInfoObject["type"].toString()=="Time"){
+            columnInfo.type = ColumnInfo::Time;
+        } else if (columnInfoObject["type"].toString()=="Message"){
+            columnInfo.type = ColumnInfo::Message;
+        } else if (columnInfoObject["type"].toString()=="Unit"){
+            columnInfo.type = ColumnInfo::Unit;
+        } else if (columnInfoObject["type"].toString()=="Id"){
+            columnInfo.type = ColumnInfo::Id;
+        } else {
+            columnInfo.type = ColumnInfo::Undef;
+        }
+        columns.append(columnInfo);
+    }
+
+    if (!fileSettings["isStartStopRecord"].toBool()){
+        if(file->open(QIODevice::ReadWrite)){
+            for (int i = 0; i < columns.size(); ++i) {
+                file->write(columns[i].title.toUtf8());
+                if (i != columns.size() - 1){
+                    file->write(fileSettings["columnSeparator"].toString().toUtf8());
+                } else {
+                    file->write("\r\n");
+                }
+            }
+        }
+    }
+
+    parameters_ = parameters;
+}
+
+void FileRecorder::addData(TerconData data)
+{
+    for (int i = 0; i < columns.size(); ++i) {
+        if(columns[i].idSource == data.id || columns[i].idSource=="All"){
+            if (columns[i].type == ColumnInfo::Value){
+                if (columns[i].precision == -1){
+                    columns[i].value = QString::number(data.value * columns[i].multiplier);
+                } else {
+                    columns[i].value = QString::number(data.value * columns[i].multiplier,'f',columns[i].precision);
+                }
+                columns[i].isSetData = true;
+            }
+            else if (columns[i].type == ColumnInfo::Time){
+                columns[i].value = QString::number(data.time/1000.0,'f',3);
+                columns[i].isSetData = true;
+            }
+            else if (columns[i].type == ColumnInfo::Message){
+                columns[i].value = data.message;
+                columns[i].isSetData = true;
+            }
+            else if (columns[i].type == ColumnInfo::Unit){
+                columns[i].value = data.unit;
+                columns[i].isSetData = true;
+            }
+            else if (columns[i].type == ColumnInfo::Id){
+                columns[i].value = data.id;
+                columns[i].isSetData = true;
+            }
+        }
+    }
+
+    int j;
+    for (j = 0; j < columns.size(); ++j) {
+        if (!columns[j].isSetData) break;
+    }
+    if (j == columns.size() && file->isOpen()){
+        QJsonObject fileSettings = parameters_["settings"].toObject();
+        for (int i = 0; i < columns.size(); ++i) {
+            columns[i].isSetData = false;
+            file->write(columns[i].value.toUtf8());
+            if (i != columns.size() - 1){
+                file->write(fileSettings["columnSeparator"].toString().toUtf8());
+            } else {
+                file->write("\r\n");
+                file->flush();
+            }
+        }
+    }
+}
+
+void FileRecorder::writeLine(const QString & str)
+{
+    if (file->isOpen()){
+        file->write(str.toUtf8());
+        file->flush();
+    }
+}
+
+void FileRecorder::startRecordExperiment(int count)
+{
+    QJsonObject fileSettings = parameters_["settings"].toObject();
+    if (fileSettings["isStartStopRecord"].toBool()){
+        QDir currentDir(path_);
+        QString experimentName = "Experiment_" + QString::number(count);
+        currentDir.mkdir(experimentName);
+
+        file->setFileName(path_ +"\\"+experimentName+"\\"+ fileSettings["fileName"].toString()
+                + "." + fileSettings["fileExtension"].toString());
+        if(file->open(QIODevice::ReadWrite)){
+            for (int i = 0; i < columns.size(); ++i) {
+                file->write(columns[i].title.toUtf8());
+                if (i != columns.size() - 1){
+                    file->write(fileSettings["columnSeparator"].toString().toUtf8());
+                } else {
+                    file->write("\r\n");
+                }
+            }
+        }
+    }
+}
+
+void FileRecorder::stopRecordExperiment()
+{
+    QJsonObject fileSettings = parameters_["settings"].toObject();
+    if (fileSettings["isStartStopRecord"].toBool()){
+        file->close();
+    }
+}
+
+QString FileRecorder::createPath()
 {
     QString date = QDate::currentDate().toString("dd.MM.yyyy");
     date.replace(".","_");
@@ -142,29 +216,205 @@ QString DataRecorder::createPath()
     return QString(currentDir.absolutePath()+"/"+date+appendName+"/");
 }
 
-void DataRecorder::createFiles(const QString & path)
+
+
+
+/*
+void DataRecorder::convertDataFile()
 {
-    logFile = new QFile(path+"log.txt");
-    logFile->open(QIODevice::WriteOnly);
+    QVector <QPair <QString,QString> > temperatureFurnace;
+    QVector <QPair <QString,QString> > temperatureUpHeater;
+    QVector <QPair <QString,QString> > temperatureDownHeater;
+    QVector <QPair <QString,QString> > temperatureBlock;
 
-    dataFile = new QFile(path+"data.txt");
-    dataFile->open(QIODevice::WriteOnly);
-
-    regulatorFurnaceFile = new QFile(path+"regulatorFurnace.txt");
-    if(regulatorFurnaceFile->open(QIODevice::WriteOnly))
-        regulatorFurnaceFile->write("Value\tavValue\tError\tPower\tP\tI\tD\r\n");
-
-    regulatorThermostatFile = new QFile(path+"regulatorThermostat.txt");
-    if(regulatorThermostatFile->open(QIODevice::WriteOnly))
-        regulatorThermostatFile->write("Value\tavValue\tError\tPower\tP\tI\tD\r\n");
-
-    regulatorUpHeaterFile = new QFile(path+"regulatorUpHeater.txt");
-    if(regulatorUpHeaterFile->open(QIODevice::WriteOnly))
-        regulatorUpHeaterFile->write("Value\tavValue\tError\tPower\tP\tI\tD\r\n");
-
-    regulatorDownHeaterFile = new QFile(path+"regulatorDownHeater.txt");
-    if(regulatorDownHeaterFile->open(QIODevice::WriteOnly))
-        regulatorDownHeaterFile->write("Value\tavValue\tError\tPower\tP\tI\tD\r\n");
+    QVector <QPair <QString,QString> > temperatureSample;
+    QVector <QPair <QString,QString> > resistance;
+    QVector <QPair <QString,QString> > temperatureThermostat;
+    QVector <QPair <QString,QString> > diffTemperatureThermostat;
+    QVector <QPair <QString,QString> > calibrationHeaterVoltage;
+    QVector <QPair <QString,QString> > calibrationHeaterCurrent;
 
 
-}
+    if(!dataFile || !dataFile->isOpen())
+        return;
+    dataFile->seek(0);
+
+    const int time = 0;
+    const int id = 1;
+    const int value = 2;
+    const QString temperatureUpHeaterId("{89349bc0-7eab-49db-b86c-047bac3915ef}");
+    const QString temperatureFurnaceId("{ff98f69d-11cd-4553-8261-c338fe0e4a29}");
+    const QString temperatureDownHeaterId("{f41b67da-dc68-4ee9-8d3c-b74f22368a05}");
+    const QString temperatureBlockId("{1bab9ffd-68df-459a-b21b-de569a211232}");
+    const QString SampleTemperatureId("{0986e158-6266-4d5e-8498-fa5c3cd84bbe}");
+    const QString resistanceId("{41fada5a-879c-43ba-84d9-d565c0e03ead}");
+    const QString temperatureThermostatId("{02cd3b3f-314b-4ad3-9da9-8acd0045a010}");
+    const QString diffTemperatureThermostatId("{6fb4bc07-318a-4aaa-86c2-6a75d581a6b0}");
+    const QString calibrationHeaterVoltageId("{32dc31df-366c-46b7-a9ed-d546a7824f56}");
+    const QString calibrationHeaterCurrentId("{a566955d-d770-4b75-bf31-e218850f4efb}");
+
+    QString line;
+    do{
+        line = dataFile->readLine();
+        if (line.isEmpty()) break;
+
+        QStringList valuesLine(line.split("\t"));
+        if (valuesLine.size() < 3)break;
+
+
+            if(valuesLine.at(id)==temperatureUpHeaterId){
+                QPair <QString,QString> pair(valuesLine.at(time).trimmed(),valuesLine.at(value).trimmed());
+                temperatureUpHeater.append(pair);
+            }
+            else if(valuesLine.at(id)==temperatureFurnaceId){
+                QPair <QString,QString> pair(valuesLine.at(time).trimmed(),valuesLine.at(value).trimmed());
+                temperatureFurnace.append(pair);
+            }
+            else if(valuesLine.at(id)==temperatureDownHeaterId){
+                QPair <QString,QString> pair(valuesLine.at(time).trimmed(),valuesLine.at(value).trimmed());
+                temperatureDownHeater.append(pair);
+            }
+            else if(valuesLine.at(id)==temperatureBlockId){
+                QPair <QString,QString> pair(valuesLine.at(time).trimmed(),valuesLine.at(value).trimmed());
+                temperatureBlock.append(pair);
+            }
+            else if(valuesLine.at(id)==SampleTemperatureId){
+                QPair <QString,QString> pair(valuesLine.at(time).trimmed(),valuesLine.at(value).trimmed());
+                temperatureSample.append(pair);
+            }
+
+
+            else if(valuesLine.at(id)==resistanceId){
+                QPair <QString,QString> pair(valuesLine.at(time).trimmed(),valuesLine.at(value).trimmed());
+                resistance.append(pair);
+            }
+
+
+            else if(valuesLine.at(id)==diffTemperatureThermostatId){
+                QPair <QString,QString> pair(valuesLine.at(time).trimmed(),valuesLine.at(value).trimmed());
+                diffTemperatureThermostat.append(pair);
+            }
+            else if(valuesLine.at(id)==temperatureThermostatId){
+                QPair <QString,QString> pair(valuesLine.at(time).trimmed(),valuesLine.at(value).trimmed());
+                temperatureThermostat.append(pair);
+            }
+
+
+            else if(valuesLine.at(id)==calibrationHeaterVoltageId){
+                QPair <QString,QString> pair(valuesLine.at(time).trimmed(),valuesLine.at(value).trimmed());
+                calibrationHeaterVoltage.append(pair);
+            }
+            else if(valuesLine.at(id)==calibrationHeaterCurrentId){
+                QPair <QString,QString> pair(valuesLine.at(time).trimmed(),valuesLine.at(value).trimmed());
+                calibrationHeaterCurrent.append(pair);
+            }
+
+
+    }while (!line.isNull());
+
+    line.clear();
+    QFileInfo fileInfo(dataFile->fileName());
+    QFile outFile(fileInfo.dir().absolutePath()+"/initData.txt");
+    if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
+        return;
+
+    QTextStream out(&outFile);
+    out <<"time"<<"\t"<<"temperFurnace"<<"\t"
+        <<"time"<<"\t"<<"temperBlockFurnace"<<"\t"
+        <<"time"<<"\t"<<"temperUpFurnace"<<"\t"
+        <<"time"<<"\t"<<"temperDownFurnace"<<"\t"
+
+        <<"time"<<"\t"<<"temperSample"<<"\t"
+        <<"time"<<"\t"<<"resistance"<<"\t"
+        <<"time"<<"\t"<<"temperTherm"<<"\t"
+        <<"time"<<"\t"<<"diffTemperTherm"<<"\t"
+        <<"time"<<"\t"<<"calHeaterV"<<"\t"
+        <<"time"<<"\t"<<"calHeaterI"<<"\t"<<"\n";
+
+    bool isAvailableData;
+    for(int i =0;;++i){
+        isAvailableData = false;
+        line.clear();
+        if(i<temperatureFurnace.size()){
+            line.append(temperatureFurnace.at(i).first+"\t"
+                        +temperatureFurnace.at(i).second+"\t");
+            isAvailableData= true;
+        }else{
+            line.append("\t\t");
+        }
+
+        if(i<temperatureBlock.size()){
+            line.append(temperatureBlock.at(i).first+"\t"
+                        +temperatureBlock.at(i).second+"\t");
+            isAvailableData= true;
+        }else{
+            line.append("\t\t");
+        }
+
+        if(i<temperatureUpHeater.size()){
+            line.append(temperatureUpHeater.at(i).first+"\t"
+                        +temperatureUpHeater.at(i).second+"\t");
+            isAvailableData= true;
+        }else{
+            line.append("\t\t");
+        }
+
+        if(i<temperatureDownHeater.size()){
+            line.append(temperatureDownHeater.at(i).first+"\t"
+                        +temperatureDownHeater.at(i).second+"\t");
+            isAvailableData= true;
+        }else{
+            line.append("\t\t");
+        }
+
+        if(i<temperatureSample.size()){
+            line.append(temperatureSample.at(i).first+"\t"
+                        +temperatureSample.at(i).second+"\t");
+            isAvailableData= true;
+        }else{
+            line.append("\t\t");
+        }
+        if(i<resistance.size()){
+            line.append(resistance.at(i).first+"\t"
+                        +resistance.at(i).second+"\t");
+            isAvailableData= true;
+        }else{
+            line.append("\t\t");
+        }
+        if(i<temperatureThermostat.size()){
+            line.append(temperatureThermostat.at(i).first+"\t"
+                        +temperatureThermostat.at(i).second+"\t");
+            isAvailableData= true;
+        }else{
+            line.append("\t\t");
+        }
+        if(i<diffTemperatureThermostat.size()){
+            line.append(diffTemperatureThermostat.at(i).first+"\t"
+                        +diffTemperatureThermostat.at(i).second+"\t");
+            isAvailableData= true;
+        }else{
+            line.append("\t\t");
+        }
+        if(i<calibrationHeaterVoltage.size()){
+            line.append(calibrationHeaterVoltage.at(i).first+"\t"
+                        +calibrationHeaterVoltage.at(i).second+"\t");
+            isAvailableData= true;
+        }else{
+            line.append("\t\t");
+        }
+        if(i<calibrationHeaterCurrent.size()){
+            line.append(calibrationHeaterCurrent.at(i).first+"\t"
+                        +calibrationHeaterCurrent.at(i).second+"\t");
+            isAvailableData= true;
+        }else{
+            line.append("\t\t");
+        }
+        out<<line<<"\n";
+        if (!isAvailableData)
+            break;
+    }
+
+    outFile.close();
+    QMessageBox::information(0, tr("Калориметр"), tr("Данные успешно конвертированны"));
+
+}*/

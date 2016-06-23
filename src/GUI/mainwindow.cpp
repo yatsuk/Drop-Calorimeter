@@ -1,140 +1,81 @@
 ﻿#include "mainwindow.h"
-#include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QLabel>
 #include <QCloseEvent>
 #include <QMessageBox>
+#include <QDebug>
 
 #include "terconData.h"
 
 MainWindow::MainWindow(QWidget *parent) :
-    QWidget(parent)
+    QWidget(parent),
+    isExperimentRecordStart(false)
 {
-    setWindowState(Qt::WindowMaximized);
+setWindowState(Qt::WindowMaximized);
 
-    furnace = new Furnace(this);
+furnace = new Furnace(this);
 
-    logView = new LogView();
-    connect(logView,SIGNAL(sendMessageToFile(QString)),
-            furnace,SLOT(writeLogMessageToFile(QString)));
-    logView->appendMessage(tr("Программа запущена."),Shared::warning);
-    logView->appendMessage(tr("Регулятор печи переведен в ручной режим управления."),Shared::information);
+logView = new LogView();
+connect(logView,SIGNAL(sendMessageToFile(QString)),
+        furnace,SLOT(writeLogMessageToFile(QString)));
+logView->appendMessage(tr("Программа запущена."),Shared::warning);
+logView->appendMessage(tr("Регулятор печи переведен в ручной режим управления."),Shared::information);
 
-    signalsView = new SignalsView;
-    coversAndCalHeaterWidget = new CoversAndCalHeaterWidget;
-
-    widgetRegulatorFurnace = new WidgetRegulatorFurnace();
-    widgetRegulatorFurnace->setRegulator(furnace->regulatorFurnace());
-    widgetRegulatorFurnace->diagnosticWidget->setDiagnostic(furnace->diagnostic());
-
-    widgetRegulatorThermostat = new WidgetRegulatorFurnace();
-    widgetRegulatorThermostat->setRegulator(furnace->regulatorTermostat());
-
-    additionalHeatersWidget = new AdditionalHeatersWidget;
-
-    temperatureSample = new ChartWidget();
-    temperatureSample->setPlotTitle(tr("Температура образца"));
-    temperatureSample->addSignal(5, 5, true, Qt::black, tr("Температура образца"));
-    temperatureSample->setYLeftAxisTitle(tr("Температура, %1C").arg(QChar(176)));
-
-    resistance = new ChartWidget();
-    resistance->setPlotTitle(tr("Сопротивление МТС калориметрического блока"));
-    resistance->addSignal(1, 1, true, Qt::black, tr("Сопротивление МТС"));
-    resistance->setYLeftAxisTitle(tr("Сопротивление, Ом"));
-
-    calibrationHeater = new ChartWidget();
-    calibrationHeater->setPlotTitle(tr("Калибровочный нагреватель"));
-    calibrationHeater->addSignal(3, 1, true, Qt::black, tr("1 канал"));
-    calibrationHeater->addSignal(3, 2, true, Qt::red, tr("2 канал"));
-    calibrationHeater->setYLeftAxisTitle(tr("Напряжение, мВ"));
-
-    temperatureThermostat = new ChartWidget();
-    temperatureThermostat->setPlotTitle(tr("Температура термостата калориметра"));
-    temperatureThermostat->addSignal(2, 2, true, Qt::black, tr("температура термостата"));
-    temperatureThermostat->addSignal(2, 1, false, Qt::red, tr("диф. температура термостата"));
-    temperatureThermostat->setYLeftAxisTitle(tr("Температура, %1C").arg(QChar(176)));
-    temperatureThermostat->setYRigthAxisTitle(tr("Напряжение, мВ"));
-
-    temperatureFurnace = new ChartWidget();
-    temperatureFurnace->setPlotTitle(tr("Температура печи"));
-    temperatureFurnace->addSignal(5, 1, true, Qt::black, tr("Верхний охр нагреватель"));
-    temperatureFurnace->addSignal(5, 2, true, Qt::red, tr("Температура осн. нагревателя"));
-    temperatureFurnace->addSignal(5, 3, true, Qt::green, tr("Нижний охр. нагреватель"));
-    temperatureFurnace->addSignal(5, 4, true, Qt::blue, tr("Выравнивающий блок"));
-    temperatureFurnace->addSignal(5, 5, true, Qt::magenta, tr("Температура образца"));
-    temperatureFurnace->setYLeftAxisTitle(tr("Температура, %1C").arg(QChar(176)));
-
-    tab = new QTabWidget();
-    tab->setTabPosition(QTabWidget::West);
-    tab->addTab(logView,tr("Сообщения"));
-    tab->addTab(widgetRegulatorFurnace,tr("Регулятор печи"));
-    tab->addTab(widgetRegulatorThermostat,tr("Регулятор термостата"));
-    tab->addTab(additionalHeatersWidget,tr("Охранные нагреватели"));
-    tab->addTab(coversAndCalHeaterWidget,tr("Доп. устройства"));
-    tab->addTab(signalsView,tr("Сигналы"));
-
-    measurerTabs = new QTabWidget();
-    measurerTabs->addTab(temperatureSample,tr("Температура образца"));
-    measurerTabs->addTab(temperatureFurnace,tr("Температура печи"));
-    measurerTabs->addTab(resistance,tr("Сопротивление блока"));
-    measurerTabs->addTab(temperatureThermostat,tr("Температура термостата"));
-    measurerTabs->addTab(calibrationHeater,tr("Калибровочный нагреватель"));
+signalsView = new SignalsView;
+coversAndCalHeaterWidget = new CoversAndCalHeaterWidget;
 
 
-    beginDataRecordButton = new QPushButton(tr("Запись вкл"));
-    beginDataRecordButton->setCheckable(true);
-    endDataRecordButton = new QPushButton(tr("Запись выкл"));
-    endDataRecordButton->setCheckable(true);
-    endDataRecordButton->setChecked(true);
+measurerTabs = new QTabWidget();
+createPlots(furnace->getSettings());
 
-    QHBoxLayout * recordButtonLayout = new QHBoxLayout();
-    recordButtonLayout->setMargin(5);
-    recordButtonLayout->addWidget(beginDataRecordButton);
-    recordButtonLayout->addWidget(endDataRecordButton);
-    recordButtonLayout->addStretch(1);
-    QGroupBox * recordButtonBox = new QGroupBox;
-    recordButtonBox->setLayout(recordButtonLayout);
+tab = new QTabWidget();
+tab->setTabPosition(QTabWidget::West);
+tab->addTab(logView,tr("Сообщения"));
+tab->addTab(coversAndCalHeaterWidget,tr("Доп. устройства"));
+tab->addTab(signalsView,tr("Сигналы"));
 
-    QVBoxLayout * graphLayout = new QVBoxLayout();
-    graphLayout->addWidget(recordButtonBox);
-    graphLayout->addWidget(measurerTabs);
+beginDataRecordButton = new QPushButton(tr("Запись вкл"));
+beginDataRecordButton->setCheckable(true);
+endDataRecordButton = new QPushButton(tr("Запись выкл"));
+endDataRecordButton->setCheckable(true);
+endDataRecordButton->setChecked(true);
 
-    QHBoxLayout * hLayout = new QHBoxLayout();
-    hLayout->setSpacing(15);
-    hLayout->setMargin(5);
-    hLayout->addLayout(graphLayout,4);
-    hLayout->addWidget(tab,1);
+QHBoxLayout * recordButtonLayout = new QHBoxLayout();
+recordButtonLayout->setMargin(5);
+recordButtonLayout->addWidget(beginDataRecordButton);
+recordButtonLayout->addWidget(endDataRecordButton);
+recordButtonLayout->addStretch(1);
+QGroupBox * recordButtonBox = new QGroupBox;
+recordButtonBox->setLayout(recordButtonLayout);
 
-    setLayout(hLayout);
+QVBoxLayout * graphLayout = new QVBoxLayout();
+graphLayout->addWidget(recordButtonBox);
+graphLayout->addWidget(measurerTabs);
 
-    //Connection signals to slots
+QHBoxLayout * hLayout = new QHBoxLayout();
+hLayout->setSpacing(15);
+hLayout->setMargin(5);
+hLayout->addLayout(graphLayout,3);
+hLayout->addWidget(tab,1);
+
+setLayout(hLayout);
+
+//Connection signals to slots
 
 
-    connect(beginDataRecordButton,SIGNAL(clicked()),this,SLOT(beginDataRecordClicked()));
-    connect(endDataRecordButton,SIGNAL(clicked()),this,SLOT(endDataRecordClicked()));
+connect(beginDataRecordButton,SIGNAL(clicked()),this,SLOT(beginDataRecordClicked()));
+connect(endDataRecordButton,SIGNAL(clicked()),this,SLOT(endDataRecordClicked()));
 
-    connect(widgetRegulatorFurnace,SIGNAL(message(QString,Shared::MessageLevel)),
+/*connect(widgetRegulatorFurnace,SIGNAL(message(QString,Shared::MessageLevel)),
             logView,SLOT(appendMessage(QString,Shared::MessageLevel)));
     connect(widgetRegulatorThermostat,SIGNAL(message(QString,Shared::MessageLevel)),
             logView,SLOT(appendMessage(QString,Shared::MessageLevel)));
     connect(additionalHeatersWidget,SIGNAL(message(QString,Shared::MessageLevel)),
-            logView,SLOT(appendMessage(QString,Shared::MessageLevel)));
+            logView,SLOT(appendMessage(QString,Shared::MessageLevel)));*/
 
-    connect(furnace,SIGNAL(message(QString,Shared::MessageLevel)),
-            logView,SLOT(appendMessage(QString,Shared::MessageLevel)));
+connect(furnace,SIGNAL(message(QString,Shared::MessageLevel)),
+        logView,SLOT(appendMessage(QString,Shared::MessageLevel)));
 
-    connect(furnace,SIGNAL(AdcTerconDataSend(TerconData)),
-            temperatureSample,SLOT(addDataTercon(TerconData)));
-    connect(furnace,SIGNAL(AdcTerconDataSend(TerconData)),
-            resistance,SLOT(addDataTercon(TerconData)));
-    connect(furnace,SIGNAL(AdcTerconDataSend(TerconData)),
-            temperatureThermostat,SLOT(addDataTercon(TerconData)));
-    connect(furnace,SIGNAL(AdcTerconDataSend(TerconData)),
-            calibrationHeater,SLOT(addDataTercon(TerconData)));
-    connect(furnace,SIGNAL(AdcTerconDataSend(TerconData)),
-            temperatureFurnace,SLOT(addDataTercon(TerconData)));
-
-    beginNewExperiment();
+beginNewExperiment();
 
 }
 
@@ -174,6 +115,8 @@ void MainWindow::beginNewExperiment()
             signalsView,SLOT(updateState(QJsonObject)));
     connect(furnace->regulatorDownHeater(),SIGNAL(state(QJsonObject)),
             signalsView,SLOT(updateState(QJsonObject)));
+    connect(furnace->regulatorThermostat(),SIGNAL(state(QJsonObject)),
+            signalsView,SLOT(updateState(QJsonObject)));
 
 }
 
@@ -184,14 +127,58 @@ void MainWindow::loadExperiment()
 
 void MainWindow::beginDataRecordClicked()
 {
-    beginDataRecordButton->setChecked(true);
-    endDataRecordButton->setChecked(false);
-    logView->appendMessage(tr("Запись в файл включена."),Shared::information);
+    if (!isExperimentRecordStart){
+        isExperimentRecordStart = true;
+        beginDataRecordButton->setChecked(true);
+        endDataRecordButton->setChecked(false);
+        logView->appendMessage(tr("Запись в файл включена."),Shared::information);
+    }
 }
 
 void MainWindow::endDataRecordClicked()
 {
-    beginDataRecordButton->setChecked(false);
-    endDataRecordButton->setChecked(true);
-    logView->appendMessage(tr("Запись в файл выключена."),Shared::information);
+    if (isExperimentRecordStart){
+        isExperimentRecordStart = false;
+        beginDataRecordButton->setChecked(false);
+        endDataRecordButton->setChecked(true);
+        logView->appendMessage(tr("Запись в файл выключена."),Shared::information);
+    }
+
+}
+
+void MainWindow::createPlots(const QJsonObject & settings)
+{
+    if(settings.isEmpty()) return;
+    QJsonObject guiSettings = settings["GUI"].toObject();
+    QJsonArray plotsArray = guiSettings["plots"].toArray();
+    for (int indexPlots = 0; indexPlots < plotsArray.size(); ++indexPlots) {
+        QJsonObject plotJsonObject = plotsArray[indexPlots].toObject();
+        if(plotJsonObject.isEmpty()) continue;
+
+        ChartWidget * plot = new ChartWidget();
+        plot->setObjectName(plotJsonObject["id"].toString());
+        plot->setPlotTitle(plotJsonObject["title"].toString());
+
+        QJsonArray axesArray = plotJsonObject["axes"].toArray();
+        for (int indexAxes = 0; indexAxes < axesArray.size(); ++indexAxes) {
+            QJsonObject axesJsonObject = axesArray[indexAxes].toObject();
+            if(axesJsonObject.isEmpty()) continue;
+            plot->addAxesFromJSON(axesJsonObject);
+        }
+
+        QJsonArray graphArray = plotJsonObject["graphs"].toArray();
+        for (int indexGraph = 0; indexGraph < graphArray.size(); ++indexGraph) {
+            QJsonObject graphJsonObject = graphArray[indexGraph].toObject();
+            if(graphJsonObject.isEmpty()) continue;
+            plot->addSignalFromJSON(graphJsonObject);
+        }
+
+
+        measurerTabs->addTab(plot, plotJsonObject["shortTitle"].toString());
+        connect(furnace,SIGNAL(AdcTerconDataSend(TerconData)),
+                plot,SLOT(addDataTercon(TerconData)));
+
+        plots.push_back(plot);
+    }
+
 }

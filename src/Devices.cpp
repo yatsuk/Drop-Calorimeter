@@ -52,7 +52,7 @@ void Covers::openTopCoverByLTR()
 {
     timerTopCoverIsStop = true;
     topCoverIsOpen = true;
-    QTimer::singleShot(500,this,SLOT(lowVoltage()));
+    QTimer::singleShot(1000,this,SLOT(lowVoltage()));
     emit openTopCoverSignal();
     emit message(tr("Верхняя крышка открыта."),Shared::information);
 }
@@ -61,7 +61,7 @@ void Covers::openBottomCoverByLTR()
 {
     timerBottomCoverIsStop = true;
     bottomCoverIsOpen = true;
-    QTimer::singleShot(500,this,SLOT(lowVoltage()));
+    QTimer::singleShot(1000,this,SLOT(lowVoltage()));
     emit openBottomCoverSignal();
     emit message(tr("Нижняя крышка открыта."),Shared::information);
 }
@@ -329,3 +329,127 @@ void SampleLock::statusPortLtr43(DWORD status)
     }
 
 }
+
+
+
+
+
+
+DropDevice::DropDevice(QObject *parent) :
+    QObject(parent),
+    topCoverState(CoverState::Undef),
+    bottomCoverState(CoverState::Undef),
+    sampleLockState(SampleLockState::Undef),
+    covers(0),
+    dropSensor(0),
+    sampleLock(0),
+    safetyValve(0),
+    isInited(false),
+    dropReady(false),
+    timerOpenedCoversIsStopped(true)
+{
+
+}
+
+bool DropDevice::init()
+{
+    if (covers && dropSensor && sampleLock && safetyValve){
+        isInited = true;
+
+        connect (safetyValve, SIGNAL(remoteDropSignal()), this, SLOT(drop()));
+        connect (covers, SIGNAL(openTopCoverSignal()), this, SLOT(topCoverOpened()));
+        connect (covers, SIGNAL(closeTopCoverSignal()), this, SLOT(topCoverClosed()));
+        connect (covers, SIGNAL(openBottomCoverSignal()), this, SLOT(bottomCoverOpened()));
+        connect (covers, SIGNAL(closeBottomCoverSignal()), this, SLOT(bottomCoverClosed()));
+        connect (sampleLock, SIGNAL(openLockSignal()), this, SLOT(sampleLockOpened()));
+        connect (sampleLock, SIGNAL(closeLockSignal()), this, SLOT(sampleLockClosed()));
+        connect (dropSensor, SIGNAL(droped()), this, SLOT(dropped()));
+    }
+
+    return isInited;
+}
+
+void DropDevice::drop()
+{
+    if (isInited){
+        covers->openTopCover();
+        covers->openBottomCover();
+        dropReady = true;
+        emit message(tr("Автоматический сброс ампулы по сигналу отсекателя."),Shared::information);
+    }
+}
+
+void DropDevice::dropped()
+{
+    if (isInited && sampleLockState == SampleLockState::Open){
+        covers->closeTopCover();
+        covers->closeBottomCover();
+        sampleLock->lockClose();
+        emit message(tr("Время падения ампулы = %1 мс").arg(timeDrop.elapsed()- delayDrop),Shared::warning);
+        emit message(tr("Сброс ампулы выполнен."),Shared::information);
+        dropReady = false;
+    } else if (isInited && sampleLockState == SampleLockState::Close){
+        emit message(tr("Ложное срабатывание датчика пролета"),Shared::warning);
+    }
+}
+
+void DropDevice::openLockSample()
+{
+    if (topCoverState == CoverState::Open && bottomCoverState == CoverState::Open){
+        QTimer::singleShot(delayDropSensor,dropSensor,SLOT(waitDrop()));
+        QTimer::singleShot(delayDrop,sampleLock,SLOT(lockOpen()));
+        timeDrop.start();
+        timeOpenCovers.start();
+        timerOpenedCoversIsStopped = false;
+    }
+}
+
+void DropDevice::topCoverOpened()
+{
+    topCoverState = CoverState::Open;
+    if (dropReady)
+        openLockSample();
+}
+
+void DropDevice::topCoverClosed()
+{
+    topCoverState = CoverState::Close;
+    if (!timerOpenedCoversIsStopped){
+        timerOpenedCoversIsStopped = true;
+        emit message(tr("Время засветки калориметрического блока= %1 мс").arg(timeOpenCovers.elapsed()),Shared::warning);
+    }
+}
+
+void DropDevice::bottomCoverOpened()
+{
+    bottomCoverState = CoverState::Open;
+    if (dropReady)
+        openLockSample();
+}
+
+void DropDevice::bottomCoverClosed()
+{
+    bottomCoverState = CoverState::Close;
+    if (!timerOpenedCoversIsStopped){
+        timerOpenedCoversIsStopped = true;
+        emit message(tr("Время засветки калориметрического блока= %1 мс").arg(timeOpenCovers.elapsed()),Shared::warning);
+    }
+}
+
+void DropDevice::sampleLockOpened()
+{
+    sampleLockState = SampleLockState::Open;
+}
+
+void DropDevice::sampleLockClosed()
+{
+    sampleLockState = SampleLockState::Close;
+}
+
+
+
+
+
+
+
+

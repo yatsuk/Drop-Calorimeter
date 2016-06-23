@@ -6,7 +6,7 @@
 #include <QDebug>
 
 WidgetRegulatorFurnace::WidgetRegulatorFurnace(QWidget *parent) :
-    QWidget(parent)
+    QDialog(parent)
 {
     QFont captionFont;
     captionFont.setBold(true);

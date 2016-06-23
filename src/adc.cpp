@@ -170,9 +170,8 @@ void ADC::recvData(){
             if (i==2){
                 static double prevValue;
                 TerconData data;
-                data.channel=0;
-                data.deviceNumber=4;
-                data.unit='T';
+                data.id = "{aad762a2-6691-4049-9f3c-443cb51515b6}";
+                data.unit=tr("\u030AC");
 
                 double value = dataArray[i];
 
@@ -209,9 +208,8 @@ void ADC::recvData(){
             }
             else if(i==1){
                 TerconData data;
-                data.channel=1;
-                data.deviceNumber=4;
-                data.unit='T';
+                data.id = "{21370e48-92fe-4e26-b524-d04ebac0e5e2}";
+                data.unit=tr("\u030AC");
 
                 sourcesDataCh2.push_back((dataArray[i]+offsetZero)*scale);
                 if(sourcesDataCh2.size()>parameters_.averageCount)

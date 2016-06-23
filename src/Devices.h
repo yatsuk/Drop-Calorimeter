@@ -2,7 +2,9 @@
 #define DEVICES_H
 
 #include <QObject>
+#include <QElapsedTimer>
 #include "ltr43.h"
+#include "arduino.h"
 #include "shared.h"
 
 class Covers : public QObject
@@ -111,6 +113,53 @@ private:
     bool safetyValveIsOpen;
     bool lockIsOpen;
     bool remoteOpenLockStatePrev;
+};
+
+class DropDevice : public QObject
+{
+    Q_OBJECT
+public:
+    explicit DropDevice(QObject *parent = 0);
+    bool init();
+    void setCovers (Covers * covers){this->covers = covers;}
+    void setDropSensor (Arduino * dropSensor){this->dropSensor = dropSensor;}
+    void setSampleLock (SampleLock * sampleLock){this->sampleLock = sampleLock;}
+    void setSafetyValve (SafetyValve * safetyValve){this->safetyValve = safetyValve;}
+
+signals:
+    void message(const QString & msg, Shared::MessageLevel msgLevel);
+
+private slots:
+    void topCoverOpened();
+    void topCoverClosed();
+    void bottomCoverOpened();
+    void bottomCoverClosed();
+    void sampleLockOpened();
+    void sampleLockClosed();
+    void drop();
+    void dropped();
+    void openLockSample();
+
+private:
+    enum class CoverState {Open, Close, Undef};
+    enum class SampleLockState {Open, Close, Undef};
+
+    QElapsedTimer  timeDrop;
+    QElapsedTimer  timeOpenCovers;
+    CoverState topCoverState;
+    CoverState bottomCoverState;
+    SampleLockState sampleLockState;
+    Covers * covers;
+    Arduino * dropSensor;
+    SampleLock * sampleLock;
+    SafetyValve * safetyValve;
+    bool isInited;
+    bool dropReady;
+    bool timerOpenedCoversIsStopped;
+
+    const int delayDrop = 2000;
+    const int delayDropSensor = 1000;
+
 };
 
 #endif // DEVICES_H

@@ -1,6 +1,5 @@
 ﻿#include "furnace.h"
 #include <math.h>
-#include <QJsonDocument>
 #include <QDebug>
 
 Furnace * Furnace::g_furnace = 0;
@@ -12,8 +11,7 @@ Furnace::Furnace(QObject *parent) :
     g_furnace = this;
     settings =  new QSettings(tr("IT"),tr("furnace"),this);
 
-    dataRecorder = new DataRecorder(this);
-    dataRecorder->writeFile("Time\tDeviceNumber\tNChannel\tValue\r\n",Shared::dataFile);
+    dataManager = new DataManager(this);
 
     time = new QElapsedTimer();
     time->start();
@@ -30,19 +28,30 @@ Furnace::Furnace(QObject *parent) :
     covers = new Covers(this);
     safetyValve = new SafetyValve(this);
     sampleLock = new SampleLock(this);
+    dropDevice = new DropDevice(this);
+    arduino = new Arduino(this);
 
     dac = new DAC(this);
     adc = new ADC(this);
     ltr43 = new Ltr43(this);
     ltr114 = new Ltr114(this);
     m_diagnostic = new Diagnostic(this);
-    arduino = new Arduino(this);
 
     covers->setLTR43(ltr43);
     safetyValve->setLTR43(ltr43);
     sampleLock->setLTR43(ltr43);
 
+    dropDevice->setCovers(covers);
+    dropDevice->setSampleLock(sampleLock);
+    dropDevice->setSafetyValve(safetyValve);
+    dropDevice->setDropSensor(arduino);
+    dropDevice->init();
+
     loadSettings();
+    loadJSONSettings();
+
+    connect(dataManager, SIGNAL(dataSend(TerconData)), this, SIGNAL(AdcTerconDataSend(TerconData)));
+    connect(dataManager, SIGNAL(dataSend(TerconData)), this, SLOT(receiveData(TerconData)));
 }
 
 Furnace * Furnace::instance()
@@ -59,20 +68,12 @@ qint64 Furnace::getElapsedTime()
     }
 }
 
-void Furnace::startTercon(){
-    tercon->startAck();
-}
-
-void Furnace::stopTercon(){
-    tercon->stopAck();
-}
-
 void Furnace::beginDataRecord(){
-    dataRecorder->beginRecord();
+    dataManager->startRecordExperimentFile();
 }
 
 void Furnace::endDataRecord(){
-    dataRecorder->endRecord();
+    dataManager->stopRecordExperimentFile();
 }
 
 void Furnace::turnOnCalibrationHeater(int duration)
@@ -94,7 +95,7 @@ void Furnace::turnOffCalibrationHeater()
 
 void Furnace::writeLogMessageToFile(const QString &message)
 {
-    dataRecorder->writeFile(message,Shared::logFile);
+    dataManager->addLogMessage(message);
 }
 
 void Furnace::setDacValueFurnaceChannel(double value)
@@ -102,7 +103,7 @@ void Furnace::setDacValueFurnaceChannel(double value)
     dac->setValueDAC(value,0);
 }
 
-void Furnace::setDacValueThermostateChannel(double value)
+void Furnace::setDacValueThermostatChannel(double value)
 {
     dac->setValueDAC(value,1);
 }
@@ -119,22 +120,23 @@ void Furnace::setDacValueDownHeaterChannel(double value)
 
 void Furnace::writeFurnaceRegulatorLog(const QString &logString)
 {
-    dataRecorder->writeFile(logString,Shared::regulatorFurnaceFile);
+
+    //dataRecorder->writeFile(logString,Shared::regulatorFurnaceFile);
 }
 
 void Furnace::writeThermostatRegulatorLog(const QString &logString)
 {
-    dataRecorder->writeFile(logString,Shared::regulatorThermostatFile);
+    //dataRecorder->writeFile(logString,Shared::regulatorThermostatFile);
 }
 
 void Furnace::writeUpHeaterRegulatorLog(const QString &logString)
 {
-    dataRecorder->writeFile(logString,Shared::regulatorUpHeaterFile);
+    //dataRecorder->writeFile(logString,Shared::regulatorUpHeaterFile);
 }
 
 void Furnace::writeDownHeaterRegulatorLog(const QString &logString)
 {
-    dataRecorder->writeFile(logString,Shared::regulatorDownHeaterFile);
+    //dataRecorder->writeFile(logString,Shared::regulatorDownHeaterFile);
 }
 
 void Furnace::stopDacFurnaceChannel()
@@ -142,7 +144,7 @@ void Furnace::stopDacFurnaceChannel()
     dac->stopDAC(0);
 }
 
-void Furnace::stopDacThermostateChannel()
+void Furnace::stopDacThermostatChannel()
 {
     dac->stopDAC(1);
 }
@@ -160,127 +162,28 @@ void Furnace::stopDacDownHeaterChannel()
 void Furnace::terconDataReceive(TerconData data){
 
     data.time = time->elapsed();
-    writeFile(data);
-
-    if(data.deviceNumber==5&&data.channel==5){
-        data.value = convertU2C(data.value);
-    }
+    dataManager->addData(data);
 
     emit AdcTerconDataSend(data);
 }
 
-double Furnace::convertU2C(double U){
-    long double temperature=0;
-    U+=0.173;//temperature cold = 30C
-    if (U < 1.874){
-        temperature+=1.8494946E+02*U;
-        temperature-=8.00504062E+01*pow(U,2);
-        temperature+=1.0223743E+02*pow(U,3);
-        temperature-=1.52248592E+02*pow(U,4);
-        temperature+=1.88821343E+02*pow(U,5);
-        temperature-=1.59085941E+02*pow(U,6);
-        temperature+=8.2302788E+01*pow(U,7);
-        temperature-=2.34181944E+01*pow(U,8);
-        temperature+=2.7978626E+00*pow(U,9);
-    }
-    else if ((U >= 1.874) && (U < 10.332)){
-        temperature+=1.291507177E+01;
-        temperature+=1.466298863E+02*U;
-        temperature-=1.534713402E+01*pow(U,2);
-        temperature+=3.145945973E+00*pow(U,3);
-        temperature-=4.163257839E-01*pow(U,4);
-        temperature+=3.187963771E-02*pow(U,5);
-        temperature-=1.2916375E-03*pow(U,6);
-        temperature+=2.183475087E-05*pow(U,7);
-        temperature-=1.447379511E-07*pow(U,8);
-        temperature+=8.211272125E-09*pow(U,9);
-
-    } else if( U >= 10.332){
-        temperature-=8.087801117E+01;
-        temperature+=1.621573104E+02*U;
-        temperature-=8.536869453E+00*pow(U,2);
-        temperature+=4.719686976E-01*pow(U,3);
-        temperature-=1.441693666E-02*pow(U,4);
-        temperature+=2.08161889E-04*pow(U,5);
-    }
-    return temperature;
-}
-
-void Furnace::writeFile(TerconData data){
-    dataRecorder->writeFile(QString::number(data.time/1000.0,'f',3).toLatin1()+'\t'
-                            + QString::number(data.deviceNumber).toLatin1()+'\t'
-                            + QString::number(data.channel).toLatin1()+'\t'
-                            + QString::number(data.value,'f',4).toLatin1()+"\r\n"
-                            ,Shared::dataFile);
-
-
-    if (data.deviceNumber==1){
-        if (data.channel==1)
-            dataRecorder->writeFile(QString::number(data.time/1000.0,'f',3).toLatin1()+'\t'
-                                    +QString::number(data.value,'f',4).toLatin1()+'\t'
-                                    ,Shared::mainSignalsFile);
-        else
-            dataRecorder->writeFile(QString::number(data.value,'f',4).toLatin1()+"\r\n"
-                                    ,Shared::mainSignalsFile);
-    }
-    if (data.deviceNumber==2){
-        if (data.channel==1)
-            dataRecorder->writeFile(QString::number(data.time/1000.0,'f',3).toLatin1()+'\t'
-                                    +QString::number(data.value,'f',4).toLatin1()+'\t'
-                                    ,Shared::thermostatSignalsFile);
-        else
-            dataRecorder->writeFile(QString::number(data.value,'f',4).toLatin1()+"\r\n"
-                                    ,Shared::thermostatSignalsFile);
-    }
-    if (data.deviceNumber==3){
-        if (data.channel==1)
-            dataRecorder->writeFile(QString::number(data.time/1000.0,'f',3).toLatin1()+'\t'
-                                    +QString::number(data.value,'f',4).toLatin1()+'\t'
-                                    ,Shared::calibrationHeaterFile);
-        else
-            dataRecorder->writeFile(QString::number(data.value,'f',4).toLatin1()+"\r\n"
-                                    ,Shared::calibrationHeaterFile);
-    }
-}
-
 bool Furnace::connectTercon(){
-    tercon = new Tercon();
-    devices.append(tercon);
-    tercon->description = tr("Температура ампулы и сопротивление калориметра");
-    tercon->setPortName("COM6");
-    tercon->setDeviceNumber(1);
-
-    connect(tercon,SIGNAL(dataSend(TerconData)),
-            this,SLOT(terconDataReceive(TerconData)));
-    connect(tercon,SIGNAL(message(QString,Shared::MessageLevel)),
-            this,SIGNAL(message(QString,Shared::MessageLevel)));
-    tercon->startAck();
-
-    terconThermostat = new Tercon();
-    devices.append(terconThermostat);
-    terconThermostat->setPortName("COM8");
-    terconThermostat->description = tr("Температура термостата диф. термопара термостата");
-    terconThermostat->setDeviceNumber(2);
-
-    connect(terconThermostat,SIGNAL(dataSend(TerconData)),
-            this,SLOT(terconDataReceive(TerconData)));
-    connect(terconThermostat,SIGNAL(message(QString,Shared::MessageLevel)),
-            this,SIGNAL(message(QString,Shared::MessageLevel)));
-    connect(terconThermostat,SIGNAL(dataSend(TerconData)),
-            this,SLOT(receiveData(TerconData)));
-    terconThermostat->startAck();
-
-    terconCalibrationHeater = new Tercon();
-    devices.append(terconCalibrationHeater);
-    terconCalibrationHeater->description = tr("Напряжение калибровочного нагревателя");
-    terconCalibrationHeater->setPortName("COM9");
-    terconCalibrationHeater->setDeviceNumber(3);
-
-    connect(terconCalibrationHeater,SIGNAL(dataSend(TerconData)),
-            this,SLOT(terconDataReceive(TerconData)));
-    connect(terconCalibrationHeater,SIGNAL(message(QString,Shared::MessageLevel)),
-            this,SIGNAL(message(QString,Shared::MessageLevel)));
-    terconCalibrationHeater->startAck();
+    if(settings_.isEmpty()) return false;
+    QJsonArray devicesArray = settings_["Devices"].toArray();
+    for (int i = 0; i < devicesArray.size(); ++i) {
+        QJsonObject deviceObject = devicesArray[i].toObject();
+        if (deviceObject.isEmpty())continue;
+        Device * device = Device::createDeviceFromJSON(deviceObject);
+        if (device){
+            device->connectDevice();
+            device->start();
+            connect(device,SIGNAL(dataSend(TerconData)),
+                    this,SLOT(terconDataReceive(TerconData)));
+            connect(device,SIGNAL(message(QString,Shared::MessageLevel)),
+                    this,SIGNAL(message(QString,Shared::MessageLevel)));
+            devices.append(device);
+        }
+    }
 
     arduino->setPortName("COM3");
     arduino->startAck();
@@ -288,21 +191,29 @@ bool Furnace::connectTercon(){
     return true;
 }
 
+bool Furnace::destroyDevices()
+{
+     for (int i = 0; i < devices.size(); ++i) {
+         devices[i]->stop();
+         devices[i]->disconnectDevice();
+     }
+     return true;
+}
+
 void Furnace::receiveData(TerconData data){
-    if(data.channel==2&&data.deviceNumber==2){ //thermostat
+    if(data.id == "{802cdd57-b870-4cdb-a1c2-2e430c70981c}"){ //thermostat
         regulatorOfThermostat->setValueADC(data.value);
-        //m_diagnostic->diagnosticThermocouple(data.value);
     }
-    else if(data.channel==2&&data.deviceNumber==5){//main heater
+    else if(data.id == "{a5f14434-bbc4-435e-be15-a7ad91de2701}"){//main heater
         regulatorOfFurnace->setValueADC(data.value);
     }
-    else if(data.channel==1&&data.deviceNumber==5){ //up heater
+    else if(data.id == "{33bc6e29-4e26-41a6-85f1-cfa0bc5525b9}"){ //up heater
         double setPointMainHeater = regulatorOfFurnace->getSetPoint();
         if (setPointMainHeater!=0){
             regulatorUpHeater_->setValueADC(data.value - setPointMainHeater);
         }
     }
-    else if(data.channel==3&&data.deviceNumber==5){//down heater
+    else if(data.id == "{7cb4d773-5b1d-4060-b316-24045308317f}"){//down heater
         double setPointMainHeater = regulatorOfFurnace->getSetPoint();
         if (setPointMainHeater!=0){
             regulatorDownHeater_->setValueADC(data.value - setPointMainHeater);
@@ -319,7 +230,7 @@ Regulator * Furnace::regulatorFurnace(){
     return regulatorOfFurnace;
 }
 
-Regulator * Furnace::regulatorTermostat(){
+Regulator * Furnace::regulatorThermostat(){
     return regulatorOfThermostat;
 }
 
@@ -365,11 +276,11 @@ void Furnace::run(){
             this,SLOT(writeFurnaceRegulatorLog(QString)));
 
     connect(regulatorOfThermostat,SIGNAL(stopRegulator()),
-            this,SLOT(stopDacThermostateChannel()));
+            this,SLOT(stopDacThermostatChannel()));
     connect(regulatorOfThermostat,SIGNAL(updateParameters()),
             this,SLOT(saveSettings()));
     connect(regulatorOfThermostat,SIGNAL(outPower(double)),
-            this,SLOT(setDacValueThermostateChannel(double)));
+            this,SLOT(setDacValueThermostatChannel(double)));
     connect(regulatorOfThermostat,SIGNAL(regulatorLogData(QString)),
             this,SLOT(writeThermostatRegulatorLog(QString)));
 
@@ -393,8 +304,6 @@ void Furnace::run(){
 
     connect(dac,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
-    connect(adc,SIGNAL(message(QString,Shared::MessageLevel)),
-            this,SIGNAL(message(QString,Shared::MessageLevel)));
     connect(ltr43,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
     connect(ltr43,SIGNAL(readPortsSignal(DWORD)),
@@ -406,40 +315,17 @@ void Furnace::run(){
 
     connect(sampleLock,SIGNAL(dropEnableSignal(bool)),
             safetyValve,SLOT(setRemoteDropEnable(bool)));
-    connect(safetyValve,SIGNAL(remoteDropSignal()),
-            covers,SLOT(openBottomCover()));
-    connect(safetyValve,SIGNAL(remoteDropSignal()),
-            covers,SLOT(openTopCover()));
-    connect(safetyValve,SIGNAL(remoteDropCompletedSignal()),
-            covers,SLOT(closeBottomCover()));
-    connect(safetyValve,SIGNAL(remoteDropCompletedSignal()),
-            covers,SLOT(closeTopCover()));
-
-    connect(safetyValve,SIGNAL(remoteDropSignal()),
-            sampleLock,SLOT(drop()));
-    connect(covers,SIGNAL(openBottomCoverSignal()),
-            sampleLock,SLOT(drop()));
-    connect(covers,SIGNAL(openTopCoverSignal()),
-            sampleLock,SLOT(drop()));
-
-    connect(safetyValve,SIGNAL(remoteDropSignal()),
-            arduino,SLOT(setWaitDropEnable()));
-    connect(safetyValve,SIGNAL(message(QString,Shared::MessageLevel)),
-            this,SIGNAL(message(QString,Shared::MessageLevel)));
-    connect(covers,SIGNAL(openTopCoverSignal()),
-            arduino,SLOT(waitDrop()));
-    connect(covers,SIGNAL(message(QString,Shared::MessageLevel)),
-            this,SIGNAL(message(QString,Shared::MessageLevel)));
     connect(sampleLock,SIGNAL(dropEnableSignal(bool)),
             arduino,SLOT(enableLed(bool)));
+
+    connect(safetyValve,SIGNAL(message(QString,Shared::MessageLevel)),
+            this,SIGNAL(message(QString,Shared::MessageLevel)));
+    connect(covers,SIGNAL(message(QString,Shared::MessageLevel)),
+            this,SIGNAL(message(QString,Shared::MessageLevel)));
     connect(sampleLock,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
-
-
-    connect(arduino,SIGNAL(droped()),
-            covers,SLOT(closeTopCover()));
-    connect(arduino,SIGNAL(droped()),
-            covers,SLOT(closeBottomCover()));
+    connect(dropDevice,SIGNAL(message(QString,Shared::MessageLevel)),
+            this,SIGNAL(message(QString,Shared::MessageLevel)));
     connect(arduino,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
 
@@ -464,11 +350,6 @@ void Furnace::run(){
             this,SIGNAL(message(QString,Shared::MessageLevel)));*/
     //  ////////////////
 
-    connect(adc,SIGNAL(dataSend(TerconData)),
-            this,SLOT(terconDataReceive(TerconData)));
-    connect(adc,SIGNAL(dataSend(TerconData)),
-            this,SLOT(receiveData(TerconData)));
-
 
     connect(ltr114,SIGNAL(dataSend(TerconData)),
             this,SLOT(terconDataReceive(TerconData)));
@@ -478,15 +359,13 @@ void Furnace::run(){
     connect(ltr114,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
 
+
+    dataManager->setSettings(settings_);
     connectTercon();
 
     dac->initializationLTR();
     dac->initializationLTR34();
     dac->startDAC();
-
-    adc->setTime(time);
-    adc->initializationLTR27();
-    adc->startADC();
 
     ltr43->initializationLTR43();
 
@@ -497,9 +376,15 @@ void Furnace::run(){
 
 bool Furnace::closeAppRequest()
 {
-    //saveJSONSettings();
+    saveJSONSettings();
     arduino->stopAck();
-    return ltr114->stop();
+    destroyDevices();
+
+    if (ltr114->stop()){
+        //dataRecorder->convertDataFile();
+        return true;
+    }
+    return false;
 }
 
 void Furnace::saveSettings()
@@ -626,7 +511,7 @@ void Furnace::loadSettings()
 
 void Furnace::saveJSONSettings()
 {
-    QFile saveFile(QStringLiteral("settings.json"));
+    /*QFile saveFile(QStringLiteral("settings.json"));
 
     if (!saveFile.open(QIODevice::WriteOnly)) {
         qWarning("Couldn't open save file.");
@@ -635,5 +520,25 @@ void Furnace::saveJSONSettings()
     QJsonObject jsonObject = devices.at(0)->getSetting();
 
     QJsonDocument saveDoc(jsonObject);
-    saveFile.write(saveDoc.toJson());
+    saveFile.write(saveDoc.toJson());*/
+}
+
+void Furnace::loadJSONSettings()
+{
+    QFile loadFile("settings\\settings.json");
+
+    if (!loadFile.open(QIODevice::ReadOnly)) {
+        qWarning("Couldn't open save file.");
+    }
+
+    QByteArray saveData = loadFile.readAll();
+
+    QJsonDocument loadDoc( QJsonDocument::fromJson(saveData));
+
+    settings_ = loadDoc.object();
+}
+
+QJsonObject Furnace::getSettings()
+{
+    return settings_;
 }

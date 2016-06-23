@@ -1,5 +1,6 @@
 #include "device.h"
-#include <QUuid>
+#include "tercon.h"
+#include <QTime>
 #include <QDebug>
 
 Device::~Device()
@@ -7,8 +8,15 @@ Device::~Device()
 
 }
 
-void Device::createDevice()
+Device * Device::createDeviceFromJSON(const QJsonObject &parameters)
 {
-    parameters_["id"]= QUuid::createUuid().toString();
+    Device * device = 0;
+    if (!parameters.isEmpty()){
+        if (parameters["type"].toString()=="Tercon"){
+            device = new Tercon;
+            device->setObjectName(parameters["id"].toString());
+            device->setSetting(parameters);
+        }
+    }
+    return device;
 }
-

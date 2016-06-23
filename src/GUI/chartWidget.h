@@ -2,6 +2,7 @@
 #define CHARTWIDGET_H
 
 #include <QWidget>
+#include <QJsonObject>
 #include "qcustomplot.h"
 #include "terconData.h"
 
@@ -21,11 +22,11 @@ private:
 
 class GraphData2{
 public:
-    int channelNumber;
-    int deviceNumber;
     bool leftYAxis;
     QVector <double> x;
     QVector <double> y;
+    QString sourceId;
+    int multiplier;
 };
 
 class ChartWidget : public QWidget
@@ -39,9 +40,8 @@ signals:
 
 public slots:
     void setPlotTitle(const QString & text);
-    void setYLeftAxisTitle (const QString & title);
-    void setYRigthAxisTitle (const QString & title);
-    void addSignal (int devNumber, int chNumber, bool leftYAxis, QColor color, const QString & legend);
+    void addSignalFromJSON (const QJsonObject & graphSetting);
+    void addAxesFromJSON (const QJsonObject & axesSetting);
     void addDataTercon(TerconData terconData);
 
 private slots:
