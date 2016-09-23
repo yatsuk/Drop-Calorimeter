@@ -7,7 +7,14 @@ Ltr43::Ltr43(QObject *parent) :
 {
     ltr43 = new TLTR43;
     readPortsTimer = new QTimer(this);
+
+    calibrHeaterTimer = new QTimer(this);
+    calibrHeaterTimer->setSingleShot(true);
+    calibrHeaterTimer->setTimerType(Qt::VeryCoarseTimer);
+    workTimeCalibrHeater = new QElapsedTimer();
+
     connect (readPortsTimer,SIGNAL(timeout()),this,SLOT(readPorts()));
+    connect (calibrHeaterTimer,SIGNAL(timeout()),this,SLOT(turnOffCalibrationHeater()));
 }
 
 Ltr43::~Ltr43(){
@@ -17,6 +24,7 @@ Ltr43::~Ltr43(){
         LTR43_Close(ltr43);
     }
     delete ltr43;
+    delete workTimeCalibrHeater;
 }
 
 void Ltr43::initializationLTR43(){
@@ -86,18 +94,23 @@ void Ltr43::writePort (int port, int pin, bool value)
 void Ltr43::turnOnCalibrationHeater()
 {
     writePort (3, 4, true);
+    workTimeCalibrHeater->start();
 }
 
 void Ltr43::turnOnCalibrationHeaterTimer(int duration)
 {
     turnOnCalibrationHeater();
-    QTimer::singleShot(duration*1000,this,SLOT(turnOffCalibrationHeater()));
+    calibrHeaterTimer->start(duration * 1000);
 }
 
 void Ltr43::turnOffCalibrationHeater()
 {
+    calibrHeaterTimer->stop();
     writePort (3, 4, false);
-    emit calibrationHeaterOff();
+
+    message(QString(tr("Калибровочный нагреватель выключен. Время работы %1 сек"))
+            .arg(workTimeCalibrHeater->elapsed()/1000.0),Shared::information);
+    emit calibrationHeaterOff(workTimeCalibrHeater->elapsed());
 }
 
 DWORD Ltr43::readPorts ()
@@ -118,34 +131,4 @@ DWORD Ltr43::readPorts ()
 DWORD Ltr43::getLastStatusPort()
 {
     return lastStatusPort;
-}
-
-void Ltr43::testSlotTimer(){
-    /*DWORD inputWord;
-    int err;
-
-    unsigned char port1;
-    unsigned char port2;
-    unsigned char port3;
-    unsigned char port4;
-
-    err=LTR43_ReadPort(ltr43,&inputWord);
-    if(err){
-        emit message(tr("Ошибка (модуль LTR43). Код ошибки:%1 (%2).").arg(err)
-                     .arg(LTR43_GetErrorString(err)),Shared::warning);
-        return;
-    }
-
-    port1= inputWord;
-    port2= inputWord >> 8;
-    port3= inputWord >> 16;
-    port4= inputWord >> 24;
-
-    if (port2==254)
-        emit lowerPressure();
-    else if (port2==255)
-        emit normalPressure();
-    else if (port2==253)
-        emit upperPressure();*/
-
 }

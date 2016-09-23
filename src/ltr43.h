@@ -3,6 +3,8 @@
 
 #include <QObject>
 #include <QTimer>
+#include <QTimerEvent>
+#include <QElapsedTimer>
 #include "LTR\ltr43api.h"
 #include "shared.h"
 
@@ -19,7 +21,7 @@ signals:
     void upperPressure();
     void lowerPressure();
     void normalPressure();
-    void calibrationHeaterOff();
+    void calibrationHeaterOff(qint64 elapsedTime);
     void readPortsSignal(DWORD);
 
 public slots:
@@ -31,13 +33,11 @@ public slots:
     DWORD readPorts ();
 
 
-private slots:
-    void testSlotTimer();
-
 private:
     TLTR43 * ltr43;
-    QTimer * testTimer;
     QTimer * readPortsTimer;
+    QTimer * calibrHeaterTimer;
+    QElapsedTimer * workTimeCalibrHeater;
     DWORD  lastStatusPort;
 
 };

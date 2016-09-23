@@ -21,6 +21,8 @@ Filter * Filter::createFilterFromJSON(const QJsonObject &parameters)
             filter = new TermocoupleConverter;
         } else if (parameters["type"].toString()=="MA"){
             filter = new MovingAverage;
+        } else if (parameters["type"].toString()=="BlowoutRemover"){
+            filter = new BlowoutRemover;
         }
         if (filter){
             filter->setObjectName(parameters["id"].toString());
@@ -89,6 +91,39 @@ double MovingAverage::emaValue(TerconData newValue)
     lastEmaValue = ema;
     return ema;
 }
+
+
+
+
+
+
+double BlowoutRemover::receive(TerconData data, bool * ok)
+{
+    /*if (type==Exponential){
+        if(ok)*ok=true;
+        return emaValue(data);
+    }
+    if(ok)*ok=false;*/
+    return 0;
+}
+
+void BlowoutRemover::setSetting(const QJsonObject &parameters)
+{
+    movingAverage.setSetting(parameters);
+    /*QJsonObject averageSettings = parameters["settings"].toObject();
+    type = Undef;
+    averageCount = 1;
+    if (averageSettings["type"].toString()=="exponential"){
+        type = Exponential;
+        averageCount = averageSettings["averageCount"].toInt();
+        alpha = 2.0 / (averageCount + 1.0);
+    }
+
+    parameters_ = parameters;
+    firstValue_ = true;*/
+}
+
+
 
 
 

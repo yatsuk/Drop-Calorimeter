@@ -27,9 +27,10 @@ void Arduino::readData(){
 
 void Arduino::parseArduinoMessage(const QString & msg)
 {
-    if (msg == "drop"){
+    if (msg.startsWith("drop")){
         emit message(tr("Ампула сброшена."),Shared::information);
-        QTimer::singleShot(500,this,SIGNAL(droped()));
+        emit message(msg,Shared::information);
+        emit droped();
     } else if (msg == "fail: drop timeout"){
         emit message(tr("Пролет ампулы не зафиксирован."),Shared::warning);
         emit droped();
@@ -50,16 +51,16 @@ void Arduino::enableLed(bool enable)
         return;
 
     if (enable){
-        port->write("2\r\n");
+        port->write("2");
     } else {
-        port->write("3\r\n");
+        port->write("3");
     }
 }
 
 void Arduino::waitDrop()
 {  
     if (port->isOpen())
-        port->write("1\r\n");
+        port->write("1");
 }
 
 bool Arduino::startAck(){

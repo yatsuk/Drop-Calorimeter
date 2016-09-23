@@ -1,30 +1,34 @@
 ﻿#include "tercon.h"
 #include <QDebug>
-#include <QStringList>
+#include <QJsonObject>
 
 Tercon::Tercon()
 {
-    TerconWorker * worker =  new TerconWorker;
-    worker->moveToThread(&workerThread_);
-    connect(&workerThread_, &QThread::finished, worker, &QObject::deleteLater);
-    connect(this, &Tercon::sendParameters, worker, &TerconWorker::setParameters);
-    connect(this, &Tercon::operate, worker, &TerconWorker::doWork);
-    connect(this, &Tercon::finishOperate, worker, &TerconWorker::finishWork);
-    connect(worker, SIGNAL(message(QString,Shared::MessageLevel)),
-            this, SIGNAL(message(QString,Shared::MessageLevel)),Qt::BlockingQueuedConnection);
-    connect(worker, SIGNAL(dataSend(TerconData)),
-            this, SIGNAL(dataSend(TerconData)),Qt::BlockingQueuedConnection);
-    workerThread_.start();
+    port = 0;
 }
 
 Tercon::~Tercon()
 {
-    stop();
-    workerThread_.quit();
-    if(!workerThread_.wait(5000)){
-        workerThread_.terminate();
-        qDebug() << "terminate tercon";
+    if (port)
+        delete port;
+}
+
+bool Tercon::initialization()
+{
+    port = new QSerialPort;
+    connect(port, &QSerialPort::readyRead, this, &Tercon::readData);
+
+    return true;
+}
+
+bool Tercon::setSetting(const QJsonObject &parameters)
+{
+    channelArray = parameters["channels"].toArray();
+    if (port){
+        port->setPortName(parameters["connectionSettings"].toObject()["portName"].toString());
+        return true;
     }
+    return false;
 }
 
 bool Tercon::start()
@@ -39,31 +43,8 @@ bool Tercon::stop()
 
 bool Tercon::connectDevice()
 {
-    emit sendParameters(parameters_);
-    emit operate();
-
-    return true;
-}
-
-bool Tercon::disconnectDevice()
-{
-    emit finishOperate();
-    return true;
-}
-
-
-
-
-
-TerconWorker::TerconWorker()
-{
-    port = new QSerialPort(this);
-    connect(port, &QSerialPort::readyRead, this, &TerconWorker::readData);
-}
-
-void TerconWorker::doWork()
-{
-    if(port->portName().isEmpty())
+    if(!port || port->portName().isEmpty())
+        return false;
 
     port->setBaudRate(QSerialPort::Baud9600);
     port->setDataBits(QSerialPort::Data8);
@@ -73,25 +54,23 @@ void TerconWorker::doWork()
 
     if(!port->open(QIODevice::ReadOnly)){
         emit message(tr("Ошибка открытия порта %1").arg(port->portName()),Shared::warning);
+        return false;
     }
+
+    return true;
 }
 
-void TerconWorker::finishWork()
+bool Tercon::disconnectDevice()
 {
-    if (port->isOpen()){
+    if (port && port->isOpen()){
         port->close();
+        return true;
     }
+
+    return false;
 }
 
-void TerconWorker::setParameters(const QJsonObject & parameters)
-{
-
-    channelArray = parameters["channels"].toArray();
-    port->setPortName(parameters["connectionSettings"].toObject()["portName"].toString());
-}
-
-void TerconWorker::convertData(QByteArray strData){
-
+void Tercon::convertData(QByteArray strData){
     bool convertIsOK=false;
 
     strData = strData.simplified();
@@ -136,7 +115,7 @@ void TerconWorker::convertData(QByteArray strData){
     }
 }
 
-void TerconWorker::extractData(){
+void Tercon::extractData(){
     QList <QByteArray> splitByteArray(recvBytes.split('\r'));
     for(int i =0;i <splitByteArray.size()-1;++i){
         convertData(splitByteArray.at(i));
@@ -145,7 +124,9 @@ void TerconWorker::extractData(){
     recvBytes.append(splitByteArray.last());
 }
 
-void TerconWorker::readData(){
+void Tercon::readData(){
     recvBytes.append(port->readAll());
     extractData();
 }
+
+

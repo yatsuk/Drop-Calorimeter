@@ -19,67 +19,67 @@ void Covers::setLTR43(Ltr43 * ltr43)
 void Covers::openTopCoverByTimer()
 {
     if (!timerTopCoverIsStop){
-        emit openTopCoverByTimerSignal();
         emit message(tr("Верхняя крышка открыта."),Shared::information);
+        emit openTopCoverByTimerSignal();
     }
 }
 
 void Covers::openBottomCoverByTimer()
 {
     if (!timerBottomCoverIsStop){
-        emit openBottomCoverByTimerSignal();
         emit message(tr("Нижняя крышка открыта."),Shared::information);
+        emit openBottomCoverByTimerSignal();
     }
 }
 
 void Covers::closeTopCoverByTimer()
 {
     if (!timerTopCoverIsStop){
-        emit closeTopCoverByTimerSignal();
         emit message(tr("Верхняя крышка закрыта."),Shared::information);
+        emit closeTopCoverByTimerSignal();
     }
 }
 
 void Covers::closeBottomCoverByTimer()
 {
     if (!timerBottomCoverIsStop){
-        emit closeBottomCoverByTimerSignal();
         emit message(tr("Нижняя крышка закрыта."),Shared::information);
+        emit closeBottomCoverByTimerSignal();
     }
 }
 
 void Covers::openTopCoverByLTR()
 {
+    emit message(tr("Верхняя крышка открыта."),Shared::information);
+    emit openTopCoverSignal();
     timerTopCoverIsStop = true;
     topCoverIsOpen = true;
     QTimer::singleShot(1000,this,SLOT(lowVoltage()));
-    emit openTopCoverSignal();
-    emit message(tr("Верхняя крышка открыта."),Shared::information);
 }
 
 void Covers::openBottomCoverByLTR()
 {
+    emit message(tr("Нижняя крышка открыта."),Shared::information);
+    emit openBottomCoverSignal();
     timerBottomCoverIsStop = true;
     bottomCoverIsOpen = true;
     QTimer::singleShot(1000,this,SLOT(lowVoltage()));
-    emit openBottomCoverSignal();
-    emit message(tr("Нижняя крышка открыта."),Shared::information);
 }
 
 void Covers::closeTopCoverByLTR()
 {
     timerTopCoverIsStop = true;
     topCoverIsOpen = false;
-    emit closeTopCoverSignal();
     emit message(tr("Верхняя крышка закрыта."),Shared::information);
+    emit closeTopCoverSignal();
 }
 
 void Covers::closeBottomCoverByLTR()
 {
     timerBottomCoverIsStop = true;
     bottomCoverIsOpen = false;
-    emit closeBottomCoverSignal();
     emit message(tr("Нижняя крышка закрыта."),Shared::information);
+    emit closeBottomCoverSignal();
 }
 
 void Covers::statusPortLtr43(DWORD status)
@@ -200,8 +200,8 @@ void SafetyValve::statusPortLtr43(DWORD status)
     if(valveStateOpen && !SafetyValveIsOpen){
         SafetyValveIsOpen = true;
         SafetyValveIsUndef = false;
-        emit openSafetyValve();
         emit message(tr("Отсекатель открыт."),Shared::information);
+        emit openSafetyValve();
         if (remoteDropEnable)
             emit remoteDropSignal();
     }
@@ -209,9 +209,9 @@ void SafetyValve::statusPortLtr43(DWORD status)
     if(valveStateClose && !SafetyValveIsClose){
         SafetyValveIsClose = true;
         SafetyValveIsUndef = false;
+        emit message(tr("Отсекатель закрыт."),Shared::information);
         emit closeSafetyValve();
         emit remoteDropCompletedSignal();
-        emit message(tr("Отсекатель закрыт."),Shared::information);
     }
 
     if (valveStatusUndef && !SafetyValveIsUndef){
@@ -236,8 +236,6 @@ SampleLock::SampleLock(QObject *parent) :
     QObject(parent)
 {
     dropEnable = false;
-    coverIsOpen = false;
-    safetyValveIsOpen = false;
     lockIsOpen = false;
 }
 
@@ -252,33 +250,15 @@ void SampleLock::setDropEnable(bool enable)
     emit dropEnableSignal(enable);
 }
 
-void SampleLock::drop()
-{
-    static int timesDrop;
-    if (dropEnable){
-        statusPortLtr43(ltr43_->readPorts());
-        if(!coverIsOpen && timesDrop < 5){
-            timesDrop++;
-            QTimer::singleShot(500,this,SLOT(drop()));
-            return;
-        }
-        if (coverIsOpen && safetyValveIsOpen){
-            timesDrop = 0;
-            lockOpen();
-            QTimer::singleShot(1000,this,SLOT(lockClose()));
-        }
-    }
-}
-
 void SampleLock::lockOpen()
 {
     if (dropEnable){
         higthVoltage();
         ltr43_->writePort(3, 3, true);
-        QTimer::singleShot(1000,this,SLOT(lowVoltage()));
         lockIsOpen = true;
-        emit openLockSignal();
         emit message(tr("Замок открыт."),Shared::information);
+        emit openLockSignal();
+        QTimer::singleShot(1000,this,SLOT(lowVoltage()));
     }
 }
 
@@ -286,7 +266,6 @@ void SampleLock::lockClose()
 {
     ltr43_->writePort(3, 3, false);
     lockIsOpen = false;
-    //setDropEnable(false);
     emit message(tr("Замок закрыт."),Shared::information);
     emit closeLockSignal();
 }
@@ -307,16 +286,9 @@ void SampleLock::statusPortLtr43(DWORD status)
 
     port= status >> 16;
     unsigned char portInvert = port^0xFF;
-    unsigned char topCoverPin = 1 << 5;
-    unsigned char bottomCoverPin = 1 << 2;
-    unsigned char valveOpenPin = 1 << 4;
     unsigned char remoteOpenLockPin = 1 << 1;
 
-    bool topCoverStateOpen = ((portInvert & topCoverPin)== topCoverPin) ? true : false;
-    bool bottomCoverStateOpen = ((portInvert & bottomCoverPin)== bottomCoverPin) ? true : false;
     bool remoteOpenLockState = ((portInvert & remoteOpenLockPin)== remoteOpenLockPin) ? true : false;
-    safetyValveIsOpen = ((portInvert & valveOpenPin)== valveOpenPin) ? true : false;
-    coverIsOpen = topCoverStateOpen && bottomCoverStateOpen;
 
     if (remoteOpenLockState!=remoteOpenLockStatePrev){
         if (lockIsOpen){
@@ -324,10 +296,8 @@ void SampleLock::statusPortLtr43(DWORD status)
         } else {
             lockOpen();
         }
-
         remoteOpenLockStatePrev = remoteOpenLockState;
     }
-
 }
 
 
@@ -345,8 +315,7 @@ DropDevice::DropDevice(QObject *parent) :
     sampleLock(0),
     safetyValve(0),
     isInited(false),
-    dropReady(false),
-    timerOpenedCoversIsStopped(true)
+    dropReady(false)
 {
 
 }
@@ -381,26 +350,23 @@ void DropDevice::drop()
 
 void DropDevice::dropped()
 {
-    if (isInited && sampleLockState == SampleLockState::Open){
-        covers->closeTopCover();
-        covers->closeBottomCover();
+    if (isInited){
+        emit message(tr("Время падения ампулы = %1 мс").arg(timeDrop.elapsed()),Shared::warning);
         sampleLock->lockClose();
-        emit message(tr("Время падения ампулы = %1 мс").arg(timeDrop.elapsed()- delayDrop),Shared::warning);
-        emit message(tr("Сброс ампулы выполнен."),Shared::information);
-        dropReady = false;
-    } else if (isInited && sampleLockState == SampleLockState::Close){
-        emit message(tr("Ложное срабатывание датчика пролета"),Shared::warning);
+        QTimer::singleShot(delayCloseCovers,covers,SLOT(closeTopCover()));
+        QTimer::singleShot(delayCloseCovers,covers,SLOT(closeBottomCover()));
     }
 }
 
 void DropDevice::openLockSample()
 {
     if (topCoverState == CoverState::Open && bottomCoverState == CoverState::Open){
-        QTimer::singleShot(delayDropSensor,dropSensor,SLOT(waitDrop()));
-        QTimer::singleShot(delayDrop,sampleLock,SLOT(lockOpen()));
-        timeDrop.start();
         timeOpenCovers.start();
-        timerOpenedCoversIsStopped = false;
+
+        sampleLock->lockOpen();
+        timeDrop.start();
+
+        QTimer::singleShot(delayDropSensor,dropSensor,SLOT(waitDrop()));
     }
 }
 
@@ -414,9 +380,13 @@ void DropDevice::topCoverOpened()
 void DropDevice::topCoverClosed()
 {
     topCoverState = CoverState::Close;
-    if (!timerOpenedCoversIsStopped){
-        timerOpenedCoversIsStopped = true;
-        emit message(tr("Время засветки калориметрического блока= %1 мс").arg(timeOpenCovers.elapsed()),Shared::warning);
+    if (dropReady){
+        if (bottomCoverState == CoverState::Open){
+            emit message(tr("Время засветки калориметрического блока= %1 мс").arg(timeOpenCovers.elapsed()),Shared::warning);
+        } else {
+            emit message(tr("Сброс ампулы выполнен."),Shared::information);
+            dropReady = false;
+        }
     }
 }
 
@@ -430,9 +400,13 @@ void DropDevice::bottomCoverOpened()
 void DropDevice::bottomCoverClosed()
 {
     bottomCoverState = CoverState::Close;
-    if (!timerOpenedCoversIsStopped){
-        timerOpenedCoversIsStopped = true;
-        emit message(tr("Время засветки калориметрического блока= %1 мс").arg(timeOpenCovers.elapsed()),Shared::warning);
+    if (dropReady){
+        if (bottomCoverState == CoverState::Open){
+            emit message(tr("Время засветки калориметрического блока= %1 мс").arg(timeOpenCovers.elapsed()),Shared::warning);
+        } else {
+            emit message(tr("Сброс ампулы выполнен."),Shared::information);
+            dropReady = false;
+        }
     }
 }
 

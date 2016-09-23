@@ -29,6 +29,7 @@ class Furnace : public QObject
 
 public:
     explicit Furnace(QObject *parent = 0);
+    ~Furnace();
     Regulator * regulatorFurnace();
     Regulator * regulatorThermostat();
     Regulator * regulatorUpHeater();
@@ -72,7 +73,6 @@ private slots:
     void terconDataReceive(TerconData data);
     void receiveData(TerconData data);
     bool connectTercon();
-    bool destroyDevices();
     void saveSettings();
     void loadSettings();
     void saveJSONSettings();
@@ -81,6 +81,7 @@ private slots:
 private:
     QSettings * settings;
     DataManager * dataManager;
+    DeviceManager * deviceManager;
 
     Arduino * arduino;
 
@@ -98,10 +99,8 @@ private:
     ADC * adc;
     Diagnostic * m_diagnostic;
     QElapsedTimer * time;
-    QElapsedTimer * workingTimeCalibrHeater;
     static Furnace * g_furnace;
 
-    QVector <Device *> devices;
 
     QJsonObject settings_;
     

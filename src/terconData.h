@@ -3,12 +3,10 @@
 
 #include <QChar>
 #include <QString>
+#include <QMetaType>
 
-class TerconData
+struct TerconData
 {
-public:
-    TerconData();
-
     double value;
     QString unit;
     QString id;
@@ -17,5 +15,7 @@ public:
 
     static const int virtualDeviceNumber = 100;
 };
+
+Q_DECLARE_METATYPE(TerconData)
 
 #endif // TERCONDATA_H

@@ -9,13 +9,14 @@ Furnace::Furnace(QObject *parent) :
 {
 
     g_furnace = this;
-    settings =  new QSettings(tr("IT"),tr("furnace"),this);
-
-    dataManager = new DataManager(this);
 
     time = new QElapsedTimer();
     time->start();
-    workingTimeCalibrHeater = new QElapsedTimer();
+
+    settings =  new QSettings(tr("IT"),tr("furnace"),this);
+
+    dataManager = new DataManager(this);
+    deviceManager = new DeviceManager(this);
 
     regulatorOfFurnace = new Regulator(this);
     regulatorOfFurnace->setObjectName("regulator-main-heater");
@@ -54,6 +55,11 @@ Furnace::Furnace(QObject *parent) :
     connect(dataManager, SIGNAL(dataSend(TerconData)), this, SLOT(receiveData(TerconData)));
 }
 
+Furnace::~Furnace()
+{
+    delete time;
+}
+
 Furnace * Furnace::instance()
 {
     return g_furnace;
@@ -83,14 +89,12 @@ void Furnace::turnOnCalibrationHeater(int duration)
     else
         ltr43->turnOnCalibrationHeater();
 
-    workingTimeCalibrHeater->restart();
     message(tr("Калибровочный нагреватель включен."),Shared::information);
 }
 
 void Furnace::turnOffCalibrationHeater()
 {
     ltr43->turnOffCalibrationHeater();
-    message(QString(tr("Калибровочный нагреватель выключен. Время работы %1 мсек")).arg(workingTimeCalibrHeater->elapsed()),Shared::information);
 }
 
 void Furnace::writeLogMessageToFile(const QString &message)
@@ -173,31 +177,26 @@ bool Furnace::connectTercon(){
     for (int i = 0; i < devicesArray.size(); ++i) {
         QJsonObject deviceObject = devicesArray[i].toObject();
         if (deviceObject.isEmpty())continue;
-        Device * device = Device::createDeviceFromJSON(deviceObject);
+        Device * device = deviceManager->createDeviceFromJSON(deviceObject);
         if (device){
-            device->connectDevice();
-            device->start();
-            connect(device,SIGNAL(dataSend(TerconData)),
-                    this,SLOT(terconDataReceive(TerconData)));
             connect(device,SIGNAL(message(QString,Shared::MessageLevel)),
                     this,SIGNAL(message(QString,Shared::MessageLevel)));
-            devices.append(device);
+
+            if(!device->connectDevice()){
+                qDebug() << "connect device fail";
+            }
+            if (!device->start()){
+                qDebug() << "start device fail";
+            }
+
+            connect(device,SIGNAL(dataSend(TerconData)),
+                    this,SLOT(terconDataReceive(TerconData)));
         }
     }
-
     arduino->setPortName("COM3");
     arduino->startAck();
 
     return true;
-}
-
-bool Furnace::destroyDevices()
-{
-     for (int i = 0; i < devices.size(); ++i) {
-         devices[i]->stop();
-         devices[i]->disconnectDevice();
-     }
-     return true;
 }
 
 void Furnace::receiveData(TerconData data){
@@ -259,7 +258,7 @@ SampleLock * Furnace::getSampleLock()
 
 void Furnace::run(){
 
-    connect (ltr43,SIGNAL(calibrationHeaterOff()),
+    connect (ltr43,SIGNAL(calibrationHeaterOff(qint64)),
              this,SIGNAL(calibrationHeaterOff()));
 
     connect(regulatorOfFurnace,SIGNAL(stopRegulator()),
@@ -378,7 +377,7 @@ bool Furnace::closeAppRequest()
 {
     saveJSONSettings();
     arduino->stopAck();
-    destroyDevices();
+    deviceManager->destroyDevices();
 
     if (ltr114->stop()){
         //dataRecorder->convertDataFile();

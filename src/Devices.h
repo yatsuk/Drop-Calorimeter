@@ -100,7 +100,6 @@ public slots:
     void statusPortLtr43(DWORD status);
     void lockOpen();
     void lockClose();
-    void drop();
 
 private slots:
     void lowVoltage();
@@ -109,8 +108,6 @@ private slots:
 private:
     Ltr43 * ltr43_;
     bool dropEnable;
-    bool coverIsOpen;
-    bool safetyValveIsOpen;
     bool lockIsOpen;
     bool remoteOpenLockStatePrev;
 };
@@ -157,8 +154,8 @@ private:
     bool dropReady;
     bool timerOpenedCoversIsStopped;
 
-    const int delayDrop = 2000;
-    const int delayDropSensor = 1000;
+    const int delayDropSensor = 200;
+    const int delayCloseCovers = 200;
 
 };
 
