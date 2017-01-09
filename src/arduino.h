@@ -26,11 +26,14 @@ public slots:
 
 private slots:
     void readData();
+    void testFotoResistor();
+    void dropSensorIsBroken();
 
 private:
     void parseArduinoMessage(const QString & msg);
 
     bool waitDropEnable;
+    bool dropSensorBrokenNotAck = false;
     QSerialPort * port;
     QString arduinoMessage;
 

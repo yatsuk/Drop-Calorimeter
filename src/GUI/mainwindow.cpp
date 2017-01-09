@@ -7,8 +7,7 @@
 #include "terconData.h"
 
 MainWindow::MainWindow(QWidget *parent) :
-    QWidget(parent),
-    isExperimentRecordStart(false)
+    QWidget(parent)
 {
 setWindowState(Qt::WindowMaximized);
 
@@ -20,8 +19,9 @@ connect(logView,SIGNAL(sendMessageToFile(QString)),
 logView->appendMessage(tr("Программа запущена."),Shared::warning);
 logView->appendMessage(tr("Регулятор печи переведен в ручной режим управления."),Shared::information);
 
-signalsView = new SignalsView;
-coversAndCalHeaterWidget = new CoversAndCalHeaterWidget;
+furnaceSignalsView = new FurnaceSignalsView;
+
+calorimetrBlockWidget = new CalorimetrBlockWidget;
 
 
 measurerTabs = new QTabWidget();
@@ -30,25 +30,10 @@ createPlots(furnace->getSettings());
 tab = new QTabWidget();
 tab->setTabPosition(QTabWidget::West);
 tab->addTab(logView,tr("Сообщения"));
-tab->addTab(coversAndCalHeaterWidget,tr("Доп. устройства"));
-tab->addTab(signalsView,tr("Сигналы"));
-
-beginDataRecordButton = new QPushButton(tr("Запись вкл"));
-beginDataRecordButton->setCheckable(true);
-endDataRecordButton = new QPushButton(tr("Запись выкл"));
-endDataRecordButton->setCheckable(true);
-endDataRecordButton->setChecked(true);
-
-QHBoxLayout * recordButtonLayout = new QHBoxLayout();
-recordButtonLayout->setMargin(5);
-recordButtonLayout->addWidget(beginDataRecordButton);
-recordButtonLayout->addWidget(endDataRecordButton);
-recordButtonLayout->addStretch(1);
-QGroupBox * recordButtonBox = new QGroupBox;
-recordButtonBox->setLayout(recordButtonLayout);
+tab->addTab(calorimetrBlockWidget,tr("Калориметрический блок"));
+tab->addTab(furnaceSignalsView,tr("Печь калориметра"));
 
 QVBoxLayout * graphLayout = new QVBoxLayout();
-graphLayout->addWidget(recordButtonBox);
 graphLayout->addWidget(measurerTabs);
 
 QHBoxLayout * hLayout = new QHBoxLayout();
@@ -60,10 +45,6 @@ hLayout->addWidget(tab,1);
 setLayout(hLayout);
 
 //Connection signals to slots
-
-
-connect(beginDataRecordButton,SIGNAL(clicked()),this,SLOT(beginDataRecordClicked()));
-connect(endDataRecordButton,SIGNAL(clicked()),this,SLOT(endDataRecordClicked()));
 
 /*connect(widgetRegulatorFurnace,SIGNAL(message(QString,Shared::MessageLevel)),
             logView,SLOT(appendMessage(QString,Shared::MessageLevel)));
@@ -103,46 +84,24 @@ void MainWindow::beginNewExperiment()
 {
     furnace->run();
 
-    connect(beginDataRecordButton,SIGNAL(clicked()),furnace,SLOT(beginDataRecord()));
-    connect(endDataRecordButton,SIGNAL(clicked()),furnace,SLOT(endDataRecord()));
-
     connect(furnace,SIGNAL(AdcTerconDataSend(TerconData)),
-            signalsView,SLOT(addValue(TerconData)));
+            furnaceSignalsView,SLOT(setTemperature(TerconData)));
+    connect(furnace,SIGNAL(AdcTerconDataSend(TerconData)),
+            calorimetrBlockWidget,SLOT(setValue(TerconData)));
 
     connect(furnace->regulatorFurnace(),SIGNAL(state(QJsonObject)),
-            signalsView,SLOT(updateState(QJsonObject)));
+            furnaceSignalsView,SLOT(updateState(QJsonObject)));
     connect(furnace->regulatorUpHeater(),SIGNAL(state(QJsonObject)),
-            signalsView,SLOT(updateState(QJsonObject)));
+            furnaceSignalsView,SLOT(updateState(QJsonObject)));
     connect(furnace->regulatorDownHeater(),SIGNAL(state(QJsonObject)),
-            signalsView,SLOT(updateState(QJsonObject)));
+            furnaceSignalsView,SLOT(updateState(QJsonObject)));
     connect(furnace->regulatorThermostat(),SIGNAL(state(QJsonObject)),
-            signalsView,SLOT(updateState(QJsonObject)));
+            calorimetrBlockWidget,SLOT(updateState(QJsonObject)));
 
 }
 
 void MainWindow::loadExperiment()
 {
-
-}
-
-void MainWindow::beginDataRecordClicked()
-{
-    if (!isExperimentRecordStart){
-        isExperimentRecordStart = true;
-        beginDataRecordButton->setChecked(true);
-        endDataRecordButton->setChecked(false);
-        logView->appendMessage(tr("Запись в файл включена."),Shared::information);
-    }
-}
-
-void MainWindow::endDataRecordClicked()
-{
-    if (isExperimentRecordStart){
-        isExperimentRecordStart = false;
-        beginDataRecordButton->setChecked(false);
-        endDataRecordButton->setChecked(true);
-        logView->appendMessage(tr("Запись в файл выключена."),Shared::information);
-    }
 
 }
 

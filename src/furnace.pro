@@ -32,7 +32,7 @@ SOURCES += main.cpp\
     GUI/automaticRegulatorWidget.cpp \
     GUI/calibrationHeaterWidget.cpp \
     GUI/chartWidget.cpp \
-    GUI/coversAndCalHeaterWidget.cpp \
+    GUI/calorimetrBlockWidget.cpp \
     GUI/coversWidget.cpp \
     GUI/diagnosticSettingWidget.cpp \
     GUI/diagnosticwidget.cpp \
@@ -80,7 +80,7 @@ HEADERS  += shared.h \
     GUI/automaticRegulatorWidget.h \
     GUI/calibrationHeaterWidget.h \
     GUI/chartWidget.h \
-    GUI/coversAndCalHeaterWidget.h \
+    GUI/calorimetrBlockWidget.h \
     GUI/coversWidget.h \
     GUI/diagnosticSettingWidget.h \
     GUI/diagnosticwidget.h \

@@ -70,17 +70,18 @@ void Ltr43::initializationLTR43(){
         return;
     }
 
-    readPortsTimer->start(300);
+    readPortsTimer->start(200);
 }
 
-void Ltr43::writePort (int port, int pin, bool value)
+void Ltr43::writePort (int port, int pins, bool value)
 {
+
     static DWORD outputWord;
     if (value){
-        outputWord |= (1 << (port*8 + pin));
+        outputWord |= pins << port*8;
     } else {
         DWORD mask = 0xFFFFFFFF;
-        mask ^= (1 << (port*8 + pin));
+        mask ^= pins << port*8;
         outputWord &= mask;
     }
 
@@ -93,7 +94,7 @@ void Ltr43::writePort (int port, int pin, bool value)
 
 void Ltr43::turnOnCalibrationHeater()
 {
-    writePort (3, 4, true);
+    writePort (3, 16, true);
     workTimeCalibrHeater->start();
 }
 
@@ -106,7 +107,7 @@ void Ltr43::turnOnCalibrationHeaterTimer(int duration)
 void Ltr43::turnOffCalibrationHeater()
 {
     calibrHeaterTimer->stop();
-    writePort (3, 4, false);
+    writePort (3, 16, false);
 
     message(QString(tr("Калибровочный нагреватель выключен. Время работы %1 сек"))
             .arg(workTimeCalibrHeater->elapsed()/1000.0),Shared::information);

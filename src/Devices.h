@@ -30,6 +30,8 @@ public slots:
     void closeTopCover();
     void openBottomCover();
     void closeBottomCover();
+    void closeCovers();
+    void openCovers();
     void statusPortLtr43(DWORD status);
 
 private slots:
@@ -136,6 +138,7 @@ private slots:
     void drop();
     void dropped();
     void openLockSample();
+    void closeCovers();
 
 private:
     enum class CoverState {Open, Close, Undef};
@@ -153,10 +156,6 @@ private:
     bool isInited;
     bool dropReady;
     bool timerOpenedCoversIsStopped;
-
-    const int delayDropSensor = 200;
-    const int delayCloseCovers = 200;
-
 };
 
 #endif // DEVICES_H

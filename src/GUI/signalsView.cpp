@@ -7,36 +7,6 @@
 #include <QDebug>
 #include "furnace.h"
 
-SignalsView::SignalsView(QWidget *parent) :
-    QWidget(parent)
-{
-    furnaceSignalsView = new FurnaceSignalsView;
-    calorimeterSignalsView = new CalorimeterSignalsView;
-
-    QVBoxLayout * layout = new QVBoxLayout;
-    layout->addWidget(furnaceSignalsView);
-    layout->addWidget(calorimeterSignalsView);
-    layout->addStretch();
-
-    setLayout(layout);
-}
-
-void SignalsView::addValue(TerconData terconData){
-    furnaceSignalsView->setTemperature(terconData);
-    calorimeterSignalsView->setValue(terconData);
-}
-
-void SignalsView::updateState(const QJsonObject & json)
-{
-    furnaceSignalsView->updateState(json);
-    calorimeterSignalsView->updateState(json);
-}
-
-
-
-
-
-
 FurnaceSignalsView::FurnaceSignalsView(QWidget *parent) :
     QGroupBox(parent)
 {   
@@ -80,6 +50,7 @@ FurnaceSignalsView::FurnaceSignalsView(QWidget *parent) :
     mainLayout->addWidget(mainHeater);
     mainLayout->addWidget(upHeater);
     mainLayout->addWidget(downHeater);
+    mainLayout->addStretch();
     setLayout(mainLayout);
 
     widgetRegulatorFurnace = new WidgetRegulatorFurnace(this);
@@ -334,7 +305,7 @@ void HeaterSignalsView::changeColorDeltaTemperatureLabel(double deltaTemperature
 void HeaterSignalsView::setProgressBarText()
 {
     if (leftTimeProgressBarViewMode){
-        progressBar->setFormat(tr("осталась %1 мин, всего %2 мин, %p%")
+        progressBar->setFormat(tr("осталось %1 мин, всего %2 мин, %p%")
                                .arg(QString::number((durationTimeProgress - elapsedTimeProgress)/60,'f',0))
                                .arg(QString::number(durationTimeProgress/60,'f',0)));
     } else {

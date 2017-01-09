@@ -14,27 +14,7 @@
 #include "widgetRegulatorFurnace.h"
 #include "additionalHeatersWidget.h"
 
-class FurnaceSignalsView;
-class CalorimeterSignalsView;
 class HeaterSignalsView;
-
-class SignalsView : public QWidget
-{
-    Q_OBJECT
-public:
-    explicit SignalsView(QWidget *parent = 0);
-    
-signals:
-    
-public slots:   
-    void addValue (TerconData terconData);
-    void updateState(const QJsonObject & json);
-
-private:
-    FurnaceSignalsView * furnaceSignalsView;
-    CalorimeterSignalsView * calorimeterSignalsView;
-
-};
 
 class FurnaceSignalsView : public QGroupBox
 {

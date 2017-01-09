@@ -3,14 +3,13 @@
 
 #include <QWidget>
 #include <QTabWidget>
-#include <QPushButton>
 #include <QTextEdit>
 #include <QJsonObject>
 #include "logView.h"
 #include "calibrationHeaterWidget.h"
 #include "chartWidget.h"
 #include "furnace.h"
-#include "coversAndCalHeaterWidget.h"
+#include "calorimetrBlockWidget.h"
 #include "signalsView.h"
 #include "startupWizard.h"
 
@@ -27,8 +26,6 @@ public slots:
     void loadExperiment();
 
 private slots:
-    void beginDataRecordClicked();
-    void endDataRecordClicked();
     void createPlots(const QJsonObject & settings);
 
 protected:
@@ -38,17 +35,13 @@ private:
     StartupWizard * startupWizard;
     QTabWidget * tab;
     QTabWidget * measurerTabs;
-    QPushButton * beginDataRecordButton;
-    QPushButton * endDataRecordButton;
-    SignalsView * signalsView;
+    FurnaceSignalsView * furnaceSignalsView;
     LogView * logView;
-    CoversAndCalHeaterWidget * coversAndCalHeaterWidget;
+    CalorimetrBlockWidget * calorimetrBlockWidget;
 
     QVector <ChartWidget *> plots;
 
     Furnace * furnace;
-
-    bool isExperimentRecordStart;
 };
 
 #endif // MAINWINDOW_H

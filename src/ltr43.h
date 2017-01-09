@@ -29,7 +29,7 @@ public slots:
     void turnOnCalibrationHeater();
     void turnOnCalibrationHeaterTimer(int duration);
     void turnOffCalibrationHeater();
-    void writePort (int port, int pin, bool value);
+    void writePort (int port, int pins, bool value);
     DWORD readPorts ();
 
 

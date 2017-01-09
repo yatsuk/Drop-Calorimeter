@@ -19,8 +19,11 @@ signals:
     void closeTopCover();
     void openBottomCover();
     void closeBottomCover();
+    void closeCovers();
+    void openCovers();
 
 private slots:
+    void    bothCoversButtonClicked();
     void    topCoverButtonClicked();
     void    bottomCoverButtonClicked();
     void    topCoverLedIndicatorClicked();

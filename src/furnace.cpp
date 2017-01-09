@@ -76,10 +76,12 @@ qint64 Furnace::getElapsedTime()
 
 void Furnace::beginDataRecord(){
     dataManager->startRecordExperimentFile();
+    message(tr("Запись эксперимента в файл включена."),Shared::information);
 }
 
 void Furnace::endDataRecord(){
     dataManager->stopRecordExperimentFile();
+    message(tr("Запись эксперимента в файл выключена."),Shared::information);
 }
 
 void Furnace::turnOnCalibrationHeater(int duration)

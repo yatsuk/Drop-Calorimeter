@@ -54,7 +54,6 @@ void Covers::openTopCoverByLTR()
     emit openTopCoverSignal();
     timerTopCoverIsStop = true;
     topCoverIsOpen = true;
-    QTimer::singleShot(1000,this,SLOT(lowVoltage()));
 }
 
 void Covers::openBottomCoverByLTR()
@@ -63,7 +62,6 @@ void Covers::openBottomCoverByLTR()
     emit openBottomCoverSignal();
     timerBottomCoverIsStop = true;
     bottomCoverIsOpen = true;
-    QTimer::singleShot(1000,this,SLOT(lowVoltage()));
 }
 
 void Covers::closeTopCoverByLTR()
@@ -116,7 +114,7 @@ void Covers::statusPortLtr43(DWORD status)
 void Covers::openTopCover()
 {
     higthVoltage();
-    ltr43_->writePort(3, 2, true);
+    ltr43_->writePort(3, 4, true);
     QTimer::singleShot(1000,this,SLOT(lowVoltage()));
     QTimer::singleShot(2000,this,SLOT(openTopCoverByTimer()));
     timerTopCoverIsStop = false;
@@ -124,7 +122,7 @@ void Covers::openTopCover()
 
 void Covers::closeTopCover()
 {
-    ltr43_->writePort(3, 2, false);
+    ltr43_->writePort(3, 4, false);
     QTimer::singleShot(1000,this,SLOT(closeTopCoverByTimer()));
     timerTopCoverIsStop = false;
 }
@@ -132,7 +130,7 @@ void Covers::closeTopCover()
 void Covers::openBottomCover()
 {
     higthVoltage();
-    ltr43_->writePort(3, 0, true);
+    ltr43_->writePort(3, 1, true);
     QTimer::singleShot(1000,this,SLOT(lowVoltage()));
     QTimer::singleShot(2000,this,SLOT(openBottomCoverByTimer()));
     timerBottomCoverIsStop = false;
@@ -140,19 +138,39 @@ void Covers::openBottomCover()
 
 void Covers::closeBottomCover()
 {
-    ltr43_->writePort(3, 0, false);
+    ltr43_->writePort(3, 1, false);
     QTimer::singleShot(1000,this,SLOT(closeBottomCoverByTimer()));
+    timerBottomCoverIsStop = false;
+}
+
+void Covers::closeCovers()
+{
+    ltr43_->writePort(3, 1 | 4, false);
+    QTimer::singleShot(1000,this,SLOT(closeTopCoverByTimer()));
+    timerTopCoverIsStop = false;
+    QTimer::singleShot(1000,this,SLOT(closeBottomCoverByTimer()));
+    timerBottomCoverIsStop = false;
+}
+
+void Covers::openCovers()
+{
+    higthVoltage();
+    ltr43_->writePort(3, 1 | 4, true);
+    QTimer::singleShot(1000,this,SLOT(lowVoltage()));
+    QTimer::singleShot(1000,this,SLOT(closeTopCoverByTimer()));
+    QTimer::singleShot(2000,this,SLOT(openBottomCoverByTimer()));
+    timerTopCoverIsStop = false;
     timerBottomCoverIsStop = false;
 }
 
 void Covers::lowVoltage()
 {
-    ltr43_->writePort(3, 1, false);
+    ltr43_->writePort(3, 2, false);
 }
 
 void Covers::higthVoltage()
 {
-    ltr43_->writePort(3, 1, true);
+    ltr43_->writePort(3, 2, true);
 }
 
 
@@ -254,17 +272,17 @@ void SampleLock::lockOpen()
 {
     if (dropEnable){
         higthVoltage();
-        ltr43_->writePort(3, 3, true);
+        ltr43_->writePort(3, 8, true);
         lockIsOpen = true;
         emit message(tr("Замок открыт."),Shared::information);
         emit openLockSignal();
-        QTimer::singleShot(1000,this,SLOT(lowVoltage()));
+        QTimer::singleShot(1500,this,SLOT(lowVoltage()));
     }
 }
 
 void SampleLock::lockClose()
 {
-    ltr43_->writePort(3, 3, false);
+    ltr43_->writePort(3, 8, false);
     lockIsOpen = false;
     emit message(tr("Замок закрыт."),Shared::information);
     emit closeLockSignal();
@@ -272,12 +290,12 @@ void SampleLock::lockClose()
 
 void SampleLock::lowVoltage()
 {
-    ltr43_->writePort(3, 1, false);
+    ltr43_->writePort(3, 2, false);
 }
 
 void SampleLock::higthVoltage()
 {
-    ltr43_->writePort(3, 1, true);
+    ltr43_->writePort(3, 2, true);
 }
 
 void SampleLock::statusPortLtr43(DWORD status)
@@ -326,6 +344,7 @@ bool DropDevice::init()
         isInited = true;
 
         connect (safetyValve, SIGNAL(remoteDropSignal()), this, SLOT(drop()));
+        connect (safetyValve, SIGNAL(closeSafetyValve()), this, SLOT(closeCovers()));
         connect (covers, SIGNAL(openTopCoverSignal()), this, SLOT(topCoverOpened()));
         connect (covers, SIGNAL(closeTopCoverSignal()), this, SLOT(topCoverClosed()));
         connect (covers, SIGNAL(openBottomCoverSignal()), this, SLOT(bottomCoverOpened()));
@@ -341,8 +360,7 @@ bool DropDevice::init()
 void DropDevice::drop()
 {
     if (isInited){
-        covers->openTopCover();
-        covers->openBottomCover();
+        covers->openCovers();
         dropReady = true;
         emit message(tr("Автоматический сброс ампулы по сигналу отсекателя."),Shared::information);
     }
@@ -352,9 +370,16 @@ void DropDevice::dropped()
 {
     if (isInited){
         emit message(tr("Время падения ампулы = %1 мс").arg(timeDrop.elapsed()),Shared::warning);
+        covers->closeCovers();
         sampleLock->lockClose();
-        QTimer::singleShot(delayCloseCovers,covers,SLOT(closeTopCover()));
-        QTimer::singleShot(delayCloseCovers,covers,SLOT(closeBottomCover()));
+    }
+}
+
+void DropDevice::closeCovers()
+{
+    if (isInited && dropReady){
+        covers->closeCovers();
+        sampleLock->lockClose();
     }
 }
 
@@ -366,7 +391,7 @@ void DropDevice::openLockSample()
         sampleLock->lockOpen();
         timeDrop.start();
 
-        QTimer::singleShot(delayDropSensor,dropSensor,SLOT(waitDrop()));
+        dropSensor->waitDrop();
     }
 }
 
@@ -401,7 +426,7 @@ void DropDevice::bottomCoverClosed()
 {
     bottomCoverState = CoverState::Close;
     if (dropReady){
-        if (bottomCoverState == CoverState::Open){
+        if (topCoverState == CoverState::Open){
             emit message(tr("Время засветки калориметрического блока= %1 мс").arg(timeOpenCovers.elapsed()),Shared::warning);
         } else {
             emit message(tr("Сброс ампулы выполнен."),Shared::information);

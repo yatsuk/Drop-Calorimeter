@@ -129,13 +129,12 @@ bool Ltr114Worker::initialization()
 bool Ltr114Worker::configure()
 {
     ltr114->FreqDivider=1600;
-    ltr114->LChQnt = 6;
+    ltr114->LChQnt = 5;
     ltr114->LChTbl[0]=LTR114_CreateLChannel(LTR114_MEASMODE_U,0,LTR114_URANGE_04);
     ltr114->LChTbl[1]=LTR114_CreateLChannel(LTR114_MEASMODE_U,1,LTR114_URANGE_04);
     ltr114->LChTbl[2]=LTR114_CreateLChannel(LTR114_MEASMODE_U,2,LTR114_URANGE_04);
     ltr114->LChTbl[3]=LTR114_CreateLChannel(LTR114_MEASMODE_U,3,LTR114_URANGE_04);
-    ltr114->LChTbl[4]=LTR114_CreateLChannel(LTR114_MEASMODE_U,4,LTR114_URANGE_04);
-    ltr114->LChTbl[5]=LTR114_CreateLChannel(LTR114_MEASMODE_U,6,LTR114_URANGE_04);
+    ltr114->LChTbl[4]=LTR114_CreateLChannel(LTR114_MEASMODE_U,6,LTR114_URANGE_04);
     ltr114->SyncMode = LTR114_SYNCMODE_INTERNAL;
     ltr114->Interval = 1;
 
@@ -235,15 +234,9 @@ bool Ltr114Worker::start()
 
             TerconData dataCh5;
             dataCh5.unit=tr("В");
-            dataCh5.id = "{0986e158-6266-4d5e-8498-fa5c3cd84bbe}";
+            dataCh5.id = "{ac8d9b87-39d1-4ab2-90a9-fb88018e3306}";
             dataCh5.value= procData[4];
             emit dataSend(dataCh5);
-
-            TerconData dataCh6;
-            dataCh6.unit=tr("В");
-            dataCh6.id = "{ac8d9b87-39d1-4ab2-90a9-fb88018e3306}";
-            dataCh6.value= procData[5];
-            emit dataSend(dataCh6);
 
 
         }else{

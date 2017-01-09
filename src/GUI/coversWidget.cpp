@@ -36,8 +36,7 @@ CoversWidget::CoversWidget(QWidget *parent)
 
     connect(topCoverButton, SIGNAL(clicked()),this,SLOT(topCoverButtonClicked()));
     connect(bottomCoverButton, SIGNAL(clicked()),this,SLOT(bottomCoverButtonClicked()));
-    connect(bothCoversButton, SIGNAL(clicked()),this,SLOT(topCoverButtonClicked()));
-    connect(bothCoversButton, SIGNAL(clicked()),this,SLOT(bottomCoverButtonClicked()));
+    connect(bothCoversButton, SIGNAL(clicked()),this,SLOT(bothCoversButtonClicked()));
     connect(topCoverLedIndicator, SIGNAL(clicked()),this,SLOT(topCoverLedIndicatorClicked()));
     connect(bottomCoverLedIndicator, SIGNAL(clicked()),this,SLOT(bottomCoverLedIndicatorClicked()));
 
@@ -45,6 +44,8 @@ CoversWidget::CoversWidget(QWidget *parent)
     connect(this, SIGNAL(closeTopCover()), Furnace::instance()->getCovers(), SLOT(closeTopCover()));
     connect(this, SIGNAL(openBottomCover()), Furnace::instance()->getCovers(), SLOT(openBottomCover()));
     connect(this, SIGNAL(closeBottomCover()), Furnace::instance()->getCovers(), SLOT(closeBottomCover()));
+    connect(this, SIGNAL(openCovers()), Furnace::instance()->getCovers(), SLOT(openCovers()));
+    connect(this, SIGNAL(closeCovers()), Furnace::instance()->getCovers(), SLOT(closeCovers()));
     connect(Furnace::instance()->getCovers(),SIGNAL(openTopCoverByTimerSignal()),this,SLOT(openTopCoverByTimer()));
     connect(Furnace::instance()->getCovers(),SIGNAL(openBottomCoverByTimerSignal()),this,SLOT(openBottomCoverByTimer()));
     connect(Furnace::instance()->getCovers(),SIGNAL(closeTopCoverByTimerSignal()),this,SLOT(closeTopCoverByTimer()));
@@ -78,6 +79,19 @@ void CoversWidget::bottomCoverButtonClicked()
     } else {
         emit openBottomCover();
     }
+    bottomCoverButton->setEnabled(false);
+    bothCoversButton->setEnabled(false);
+}
+
+void CoversWidget::bothCoversButtonClicked()
+{
+    if (bottomCoverIsOpen && topCoverIsOpen){
+        emit closeCovers();
+    } else {
+        emit openCovers();
+    }
+
+    topCoverButton->setEnabled(false);
     bottomCoverButton->setEnabled(false);
     bothCoversButton->setEnabled(false);
 }

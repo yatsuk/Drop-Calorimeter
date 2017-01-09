@@ -31,9 +31,19 @@ void Arduino::parseArduinoMessage(const QString & msg)
         emit message(tr("Ампула сброшена."),Shared::information);
         emit message(msg,Shared::information);
         emit droped();
-    } else if (msg == "fail: drop timeout"){
+    } else if (msg.startsWith("fail: drop timeout")){
         emit message(tr("Пролет ампулы не зафиксирован."),Shared::warning);
-        emit droped();
+        emit message(msg,Shared::information);
+    }else if (msg.startsWith("Test fotoresistor")){
+        QStringList splittedMsg = msg.split("=");
+        bool ok;
+        double resistorValue = splittedMsg[1].trimmed().toDouble(&ok);
+        dropSensorBrokenNotAck = false;
+        if (resistorValue > 1000 || !ok){
+            emit message(tr("Неисправность детектора пролета ампулы. "
+                            "Ошибка получения сопритивления фоторезистора или поломка светодиода. "
+                            "Сопротивление фоторезистора = %1").arg(resistorValue),Shared::warning);
+        }
     } else if (msg == "led_pin, HIGH"){
         emit message(tr("Светодиод системы детектирования пролета ампулы включен."),Shared::information);
     } else if (msg == "led_pin, LOW"){
@@ -52,9 +62,25 @@ void Arduino::enableLed(bool enable)
 
     if (enable){
         port->write("2");
+        dropSensorBrokenNotAck = false;
+        QTimer::singleShot(5000, this, SLOT(testFotoResistor()));
     } else {
         port->write("3");
     }
+}
+
+void Arduino::testFotoResistor()
+{
+    port->write("4");
+    dropSensorBrokenNotAck = true;
+    QTimer::singleShot(5000, this, SLOT(dropSensorIsBroken()));
+}
+
+void Arduino::dropSensorIsBroken()
+{
+    if (dropSensorBrokenNotAck)
+        emit message(tr("Неисправность детектора пролета ампулы."
+                        "Детектор пролета не ответил на функцию тестирования."),Shared::warning);
 }
 
 void Arduino::waitDrop()
