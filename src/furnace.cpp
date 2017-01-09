@@ -7,17 +7,17 @@ Furnace * Furnace::g_furnace = 0;
 Furnace::Furnace(QObject *parent) :
     QObject(parent)
 {
-
+    
     g_furnace = this;
-
+    
     time = new QElapsedTimer();
     time->start();
-
+    
     settings =  new QSettings(tr("IT"),tr("furnace"),this);
-
+    
     dataManager = new DataManager(this);
     deviceManager = new DeviceManager(this);
-
+    
     regulatorOfFurnace = new Regulator(this);
     regulatorOfFurnace->setObjectName("regulator-main-heater");
     regulatorOfThermostat = new Regulator(this);
@@ -31,26 +31,27 @@ Furnace::Furnace(QObject *parent) :
     sampleLock = new SampleLock(this);
     dropDevice = new DropDevice(this);
     arduino = new Arduino(this);
-
+    agilent = new Agilent(this);
+    
     dac = new DAC(this);
     adc = new ADC(this);
     ltr43 = new Ltr43(this);
     ltr114 = new Ltr114(this);
     m_diagnostic = new Diagnostic(this);
-
+    
     covers->setLTR43(ltr43);
     safetyValve->setLTR43(ltr43);
     sampleLock->setLTR43(ltr43);
-
+    
     dropDevice->setCovers(covers);
     dropDevice->setSampleLock(sampleLock);
     dropDevice->setSafetyValve(safetyValve);
     dropDevice->setDropSensor(arduino);
     dropDevice->init();
-
+    
     loadSettings();
     loadJSONSettings();
-
+    
     connect(dataManager, SIGNAL(dataSend(TerconData)), this, SIGNAL(AdcTerconDataSend(TerconData)));
     connect(dataManager, SIGNAL(dataSend(TerconData)), this, SLOT(receiveData(TerconData)));
 }
@@ -90,7 +91,7 @@ void Furnace::turnOnCalibrationHeater(int duration)
         ltr43->turnOnCalibrationHeaterTimer(duration);
     else
         ltr43->turnOnCalibrationHeater();
-
+    
     message(tr("Калибровочный нагреватель включен."),Shared::information);
 }
 
@@ -126,7 +127,7 @@ void Furnace::setDacValueDownHeaterChannel(double value)
 
 void Furnace::writeFurnaceRegulatorLog(const QString &logString)
 {
-
+    
     //dataRecorder->writeFile(logString,Shared::regulatorFurnaceFile);
 }
 
@@ -166,10 +167,10 @@ void Furnace::stopDacDownHeaterChannel()
 }
 
 void Furnace::terconDataReceive(TerconData data){
-
+    
     data.time = time->elapsed();
     dataManager->addData(data);
-
+    
     emit AdcTerconDataSend(data);
 }
 
@@ -183,21 +184,21 @@ bool Furnace::connectTercon(){
         if (device){
             connect(device,SIGNAL(message(QString,Shared::MessageLevel)),
                     this,SIGNAL(message(QString,Shared::MessageLevel)));
-
+            
             if(!device->connectDevice()){
                 qDebug() << "connect device fail";
             }
             if (!device->start()){
                 qDebug() << "start device fail";
             }
-
+            
             connect(device,SIGNAL(dataSend(TerconData)),
                     this,SLOT(terconDataReceive(TerconData)));
         }
     }
     arduino->setPortName("COM3");
     arduino->startAck();
-
+    
     return true;
 }
 
@@ -220,7 +221,7 @@ void Furnace::receiveData(TerconData data){
             regulatorDownHeater_->setValueADC(data.value - setPointMainHeater);
         }
     }
-
+    
 }
 
 Diagnostic * Furnace::diagnostic(){
@@ -259,10 +260,10 @@ SampleLock * Furnace::getSampleLock()
 }
 
 void Furnace::run(){
-
+    
     connect (ltr43,SIGNAL(calibrationHeaterOff(qint64)),
              this,SIGNAL(calibrationHeaterOff()));
-
+    
     connect(regulatorOfFurnace,SIGNAL(stopRegulator()),
             this,SLOT(stopDacFurnaceChannel()));
     connect(regulatorOfFurnace,SIGNAL(stopRegulator()),
@@ -275,7 +276,7 @@ void Furnace::run(){
             this,SLOT(setDacValueFurnaceChannel(double)));
     connect(regulatorOfFurnace,SIGNAL(regulatorLogData(QString)),
             this,SLOT(writeFurnaceRegulatorLog(QString)));
-
+    
     connect(regulatorOfThermostat,SIGNAL(stopRegulator()),
             this,SLOT(stopDacThermostatChannel()));
     connect(regulatorOfThermostat,SIGNAL(updateParameters()),
@@ -284,7 +285,7 @@ void Furnace::run(){
             this,SLOT(setDacValueThermostatChannel(double)));
     connect(regulatorOfThermostat,SIGNAL(regulatorLogData(QString)),
             this,SLOT(writeThermostatRegulatorLog(QString)));
-
+    
     connect(regulatorUpHeater_,SIGNAL(stopRegulator()),
             this,SLOT(stopDacUpHeaterChannel()));
     connect(regulatorUpHeater_,SIGNAL(updateParameters()),
@@ -293,7 +294,7 @@ void Furnace::run(){
             this,SLOT(setDacValueUpHeaterChannel(double)));
     connect(regulatorUpHeater_,SIGNAL(regulatorLogData(QString)),
             this,SLOT(writeUpHeaterRegulatorLog(QString)));
-
+    
     connect(regulatorDownHeater_,SIGNAL(stopRegulator()),
             this,SLOT(stopDacDownHeaterChannel()));
     connect(regulatorDownHeater_,SIGNAL(updateParameters()),
@@ -302,7 +303,7 @@ void Furnace::run(){
             this,SLOT(setDacValueDownHeaterChannel(double)));
     connect(regulatorDownHeater_,SIGNAL(regulatorLogData(QString)),
             this,SLOT(writeDownHeaterRegulatorLog(QString)));
-
+    
     connect(dac,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
     connect(ltr43,SIGNAL(message(QString,Shared::MessageLevel)),
@@ -313,12 +314,12 @@ void Furnace::run(){
             safetyValve,SLOT(statusPortLtr43(DWORD)));
     connect(ltr43,SIGNAL(readPortsSignal(DWORD)),
             sampleLock,SLOT(statusPortLtr43(DWORD)));
-
+    
     connect(sampleLock,SIGNAL(dropEnableSignal(bool)),
             safetyValve,SLOT(setRemoteDropEnable(bool)));
     connect(sampleLock,SIGNAL(dropEnableSignal(bool)),
             arduino,SLOT(enableLed(bool)));
-
+    
     connect(safetyValve,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
     connect(covers,SIGNAL(message(QString,Shared::MessageLevel)),
@@ -330,7 +331,7 @@ void Furnace::run(){
     connect(arduino,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
 
-
+    
     // ////////////////
     /*connect(ltr43,SIGNAL(lowerPressure()),
             m_diagnostic,SLOT(lowerPressure()));
@@ -344,43 +345,48 @@ void Furnace::run(){
             m_diagnostic,SLOT(stopEmitAlarmSignals()));
     connect(m_diagnostic,SIGNAL(smoothOffRegulator()),
             regulatorOfFurnace,SLOT(smoothOff()));
-
+            
     connect(m_diagnostic,SIGNAL(smoothOffRegulator()),
             regulatorOfThermostat,SLOT(smoothOff()));
     connect(m_diagnostic,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));*/
     //  ////////////////
-
-
+    
+    
     connect(ltr114,SIGNAL(dataSend(TerconData)),
             this,SLOT(terconDataReceive(TerconData)));
     connect(ltr114,SIGNAL(dataSend(TerconData)),
             this,SLOT(receiveData(TerconData)));
-
     connect(ltr114,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
-
-
+    
+    
     dataManager->setSettings(settings_);
     connectTercon();
-
+    
     dac->initializationLTR();
     dac->initializationLTR34();
     dac->startDAC();
-
+    
     ltr43->initializationLTR43();
-
+    
     ltr114->initialization();
     ltr114->start();
 
+    connect(agilent,SIGNAL(dataSend(TerconData)),
+            this,SLOT(terconDataReceive(TerconData)));
+    connect(agilent,SIGNAL(message(QString,Shared::MessageLevel)),
+            this,SIGNAL(message(QString,Shared::MessageLevel)));
+    agilent->startAck();
 }
 
 bool Furnace::closeAppRequest()
 {
     saveJSONSettings();
     arduino->stopAck();
+    agilent->stopAck();
     deviceManager->destroyDevices();
-
+    
     if (ltr114->stop()){
         //dataRecorder->convertDataFile();
         return true;
@@ -403,7 +409,7 @@ void Furnace::saveSettings()
     settings->setValue("AverageAdc", regulatorOfFurnace->parameters().averageCount);
     settings->setValue("AveragePower", regulatorOfFurnace->parameters().averagePowerCount);
     settings->endGroup();
-
+    
     settings->beginGroup("Regulator of thermostat");
     settings->setValue("ProcentPerSecond", regulatorOfThermostat->parameters().procentPerSec);
     settings->setValue("MinPower", regulatorOfThermostat->parameters().minPower);
@@ -417,7 +423,7 @@ void Furnace::saveSettings()
     settings->setValue("AverageAdc", regulatorOfThermostat->parameters().averageCount);
     settings->setValue("AveragePower", regulatorOfThermostat->parameters().averagePowerCount);
     settings->endGroup();
-
+    
     settings->beginGroup("Regulator of up heater");
     settings->setValue("ProcentPerSecond", regulatorUpHeater_->parameters().procentPerSec);
     settings->setValue("MinPower", regulatorUpHeater_->parameters().minPower);
@@ -431,7 +437,7 @@ void Furnace::saveSettings()
     settings->setValue("AverageAdc", regulatorUpHeater_->parameters().averageCount);
     settings->setValue("AveragePower", regulatorUpHeater_->parameters().averagePowerCount);
     settings->endGroup();
-
+    
     settings->beginGroup("Regulator of down heater");
     settings->setValue("ProcentPerSecond", regulatorDownHeater_->parameters().procentPerSec);
     settings->setValue("MinPower", regulatorDownHeater_->parameters().minPower);
@@ -461,9 +467,9 @@ void Furnace::loadSettings()
     mainHeaterParameters.maxProportionalValue = settings->value("Regulator of main heater/MaxProportionalValue").toDouble();
     mainHeaterParameters.averageCount = settings->value("Regulator of main heater/AverageAdc").toInt();
     mainHeaterParameters.averagePowerCount = settings->value("Regulator of main heater/AveragePower").toInt();
-
+    
     regulatorOfFurnace->setParameters(mainHeaterParameters);
-
+    
     RegulatorParameters thermostatParameters;
     thermostatParameters.procentPerSec = settings->value("Regulator of thermostat/ProcentPerSecond").toDouble();
     thermostatParameters.minPower = settings->value("Regulator of thermostat/MinPower").toDouble();
@@ -476,9 +482,9 @@ void Furnace::loadSettings()
     thermostatParameters.maxProportionalValue = settings->value("Regulator of thermostat/MaxProportionalValue").toDouble();
     thermostatParameters.averageCount = settings->value("Regulator of thermostat/AverageAdc").toInt();
     thermostatParameters.averagePowerCount = settings->value("Regulator of thermostat/AveragePower").toInt();
-
+    
     regulatorOfThermostat->setParameters(thermostatParameters);
-
+    
     RegulatorParameters upHeaterParameters;
     upHeaterParameters.procentPerSec = settings->value("Regulator of up heater/ProcentPerSecond").toDouble();
     upHeaterParameters.minPower = settings->value("Regulator of up heater/MinPower").toDouble();
@@ -491,9 +497,9 @@ void Furnace::loadSettings()
     upHeaterParameters.maxProportionalValue = settings->value("Regulator of up heater/MaxProportionalValue").toDouble();
     upHeaterParameters.averageCount = settings->value("Regulator of up heater/AverageAdc").toInt();
     upHeaterParameters.averagePowerCount = settings->value("Regulator of up heater/AveragePower").toInt();
-
+    
     regulatorUpHeater_->setParameters(upHeaterParameters);
-
+    
     RegulatorParameters downHeaterParameters;
     downHeaterParameters.procentPerSec = settings->value("Regulator of down heater/ProcentPerSecond").toDouble();
     downHeaterParameters.minPower = settings->value("Regulator of down heater/MinPower").toDouble();
@@ -506,20 +512,20 @@ void Furnace::loadSettings()
     downHeaterParameters.maxProportionalValue = settings->value("Regulator of down heater/MaxProportionalValue").toDouble();
     downHeaterParameters.averageCount = settings->value("Regulator of down heater/AverageAdc").toInt();
     downHeaterParameters.averagePowerCount = settings->value("Regulator of down heater/AveragePower").toInt();
-
+    
     regulatorDownHeater_->setParameters(downHeaterParameters);
 }
 
 void Furnace::saveJSONSettings()
 {
     /*QFile saveFile(QStringLiteral("settings.json"));
-
+      
     if (!saveFile.open(QIODevice::WriteOnly)) {
         qWarning("Couldn't open save file.");
     }
-
+    
     QJsonObject jsonObject = devices.at(0)->getSetting();
-
+    
     QJsonDocument saveDoc(jsonObject);
     saveFile.write(saveDoc.toJson());*/
 }
@@ -527,15 +533,15 @@ void Furnace::saveJSONSettings()
 void Furnace::loadJSONSettings()
 {
     QFile loadFile("settings\\settings.json");
-
+    
     if (!loadFile.open(QIODevice::ReadOnly)) {
         qWarning("Couldn't open save file.");
     }
-
+    
     QByteArray saveData = loadFile.readAll();
-
+    
     QJsonDocument loadDoc( QJsonDocument::fromJson(saveData));
-
+    
     settings_ = loadDoc.object();
 }
 

@@ -55,7 +55,8 @@ SOURCES += main.cpp\
     LTR/ltrapi.cpp \
     device.cpp \
     filter.cpp \
-    data_manager.cpp
+    data_manager.cpp \
+    agilent.cpp
 
 HEADERS  += shared.h \
     parameters.h \
@@ -112,7 +113,8 @@ HEADERS  += shared.h \
     LTR/ltrapitypes.h \
     device.h \
     filter.h \
-    data_manager.h
+    data_manager.h \
+    agilent.h
 
 
 win32 {

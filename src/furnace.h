@@ -21,6 +21,7 @@
 #include "Devices.h"
 #include "device.h"
 #include "arduino.h"
+#include "agilent.h"
 
 
 class Furnace : public QObject
@@ -84,6 +85,7 @@ private:
     DeviceManager * deviceManager;
 
     Arduino * arduino;
+    Agilent * agilent;
 
     Regulator * regulatorOfFurnace;
     Regulator * regulatorOfThermostat;
