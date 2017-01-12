@@ -27,7 +27,7 @@ private slots:
     void initData();
     void finalize();
     void extractData();
-    void convertData(QByteArray strData);
+    void convertData(QString strData);
 
 private:
 

@@ -369,7 +369,6 @@ void Furnace::run(){
     dac->startDAC();
     
     ltr43->initializationLTR43();
-    
     ltr114->initialization();
     ltr114->start();
 

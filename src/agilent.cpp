@@ -14,18 +14,20 @@ Agilent::Agilent(QObject *parent) :
     connect(port,SIGNAL(readyRead()),this,SLOT(readData()));
 }
 
-void Agilent::convertData(QByteArray strData){
+void Agilent::convertData(QString strData){
     QTimer::singleShot(100,this,SLOT(writeData()));
 
+    strData = strData.trimmed();
     TerconData data;
     data.unit=tr("В");
     data.id = "{0986e158-6266-4d5e-8498-fa5c3cd84bbe}";
 
     bool okConvertation;
-    double value = strData.toDouble(&okConvertation)*1000;
-    if (!okConvertation)return;
-
-    data.value = value;
+    data.value = strData.toDouble(&okConvertation);
+    if (!okConvertation){
+        emit message(tr("Agilent: Ошибка чтения значения \"%1\"").arg(strData),Shared::warning);
+        return;
+    }
 
     dataSend(data);
 }
@@ -50,13 +52,16 @@ void Agilent::readData(){
 bool Agilent::startAck(){
     if(port->portName().isEmpty())
         return false;
-    if(!port->open(QIODevice::ReadWrite | QIODevice::Unbuffered))
+    if(!port->open(QIODevice::ReadWrite)){
+        emit message(tr("Agilent: Ошибка открытия порта %1").arg(port->portName()),Shared::warning);
         return false;
+    }
     if(port->setBaudRate(QSerialPort::Baud9600)&&
             port->setDataBits(QSerialPort::Data7)&&
             port->setParity(QSerialPort::EvenParity)&&
-            port->setStopBits(QSerialPort::OneStop)&&
-            port->setFlowControl(QSerialPort::NoFlowControl)){
+            port->setStopBits(QSerialPort::TwoStop)&&
+            port->setFlowControl(QSerialPort::SoftwareControl))
+    {
         QTimer::singleShot(2000,this,SLOT(initData()));
         adcRunning = true;
         return true;
@@ -66,22 +71,22 @@ bool Agilent::startAck(){
 }
 
 bool Agilent::stopAck(){
-    if (port->isOpen())
+    if (port->isOpen()){
+        port->write("SYST:LOC\r\n");
         port->close();
-    //port->write("SYST:LOC\r\n");
-    //QTimer::singleShot(1000,this,SLOT(finalize()));
+    }
     return true;
 }
 
 void Agilent::writeData(){
-    //qDebug()<<"write data";
     port->write("READ?\r\n");
-    emergencyTimer->start(3000);
+    emergencyTimer->start(10000);
 }
 
 void Agilent::initData(){
     port->write("*RST; *CLS\r\n");
     port->write("SYST:REM\r\n");
+    port->write(":CONFigure:VOLTage:DC MIN, MIN\r\n");
     QTimer::singleShot(2000,this,SLOT(writeData()));
 
 }

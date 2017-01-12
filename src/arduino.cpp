@@ -92,7 +92,7 @@ void Arduino::waitDrop()
 bool Arduino::startAck(){
     port->setPortName("COM3");
     if(!port->open(QIODevice::ReadWrite)){
-        emit message(tr("Arduino: Ошибка открытия порта COM3"),Shared::warning);
+        emit message(tr("Arduino: Ошибка открытия порта %1").arg(port->portName()),Shared::warning);
     }
 
     port->setBaudRate(QSerialPort::Baud115200);
