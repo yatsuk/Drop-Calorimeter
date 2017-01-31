@@ -1,5 +1,6 @@
 #include "Devices.h"
 #include <QTimer>
+#include <QApplication>
 #include <QDebug>
 
 Covers::Covers(QObject *parent) :
@@ -369,6 +370,7 @@ void DropDevice::drop()
 void DropDevice::dropped()
 {
     if (isInited){
+        QApplication::beep();
         emit message(tr("Время падения ампулы = %1 мс").arg(timeDrop.elapsed()),Shared::warning);
         covers->closeCovers();
         sampleLock->lockClose();

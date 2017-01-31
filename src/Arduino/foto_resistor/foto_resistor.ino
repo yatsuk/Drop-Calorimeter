@@ -1,8 +1,7 @@
 int foto_resistor_value = 0;
 int foto_resistor_old_value;
 int foto_resistor_ADC_pin = 0;
-int led_pin = 2;
-int delta_foto_resitor = 30;
+int delta_foto_resitor = 50;
 double average_value_foto_resistor = 0;
 double max_delta_value_foto_resistor = 0;
 bool first_ADC_read = true;
@@ -15,9 +14,6 @@ void setup()
 {
   Serial.begin(115200);
   analogReference(DEFAULT);
-  
-  pinMode(led_pin, OUTPUT);
-  digitalWrite(led_pin, LOW);
 }
 
 void loop()
@@ -51,6 +47,10 @@ void loop()
                 Serial.print(" ");
                 Serial.print(foto_resistor_value);
                 Serial.println("");
+                Serial.print("Max value fotoresistor = ");
+                Serial.print(getMaxValueFotoResistor());
+                Serial.println("");
+                
                 stop_ADC_read = true;
             }
         }
@@ -63,13 +63,7 @@ void loop()
                 time = millis();
                 stop_ADC_read = false;
                 first_ADC_read = true;
-            } else if (incomingByte == '2'){
-                Serial.println("led_pin, HIGH");
-                digitalWrite(led_pin, HIGH);
-            } else if (incomingByte == '3'){
-                Serial.println("led_pin, LOW");
-                digitalWrite(led_pin, LOW);
-            } else if (incomingByte == '4'){
+            }else if (incomingByte == '4'){
                  int readValueTimes =30;
                  double average_value_foto_resistor = 0;
                  for (int i = 0; i < readValueTimes; i++){
@@ -82,4 +76,21 @@ void loop()
             }
         }
     }
+}
+
+int getMaxValueFotoResistor()
+{
+  int maxValue = 0;
+  const unsigned long timeDeltaMs = 500;
+  unsigned long time = millis();
+  
+  int foto_resistor_value = analogRead(foto_resistor_ADC_pin);
+  int foto_resistor_MaxValue = foto_resistor_value;
+  
+  while (millis() < (time + timeDeltaMs)){
+    foto_resistor_value = analogRead(foto_resistor_ADC_pin);
+    if (foto_resistor_value > foto_resistor_MaxValue)
+        foto_resistor_MaxValue = foto_resistor_value;
+  }
+  return foto_resistor_MaxValue;
 }
