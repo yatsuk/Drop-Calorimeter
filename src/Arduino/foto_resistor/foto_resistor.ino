@@ -42,11 +42,14 @@ void loop()
             Serial.println("");
             }
             else if (delta > delta_foto_resitor){
+                unsigned long endDropTime = millis();
                 Serial.print("drop ");
                 Serial.print(average_value_foto_resistor);
                 Serial.print(" ");
                 Serial.print(foto_resistor_value);
                 Serial.println("");
+                Serial.print("Drop time = ");
+                Serial.print(endDropTime - time);
                 Serial.print("Max value fotoresistor = ");
                 Serial.print(getMaxValueFotoResistor());
                 Serial.println("");
