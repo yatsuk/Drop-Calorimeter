@@ -372,8 +372,8 @@ void DropDevice::dropped()
     if (isInited){
         QApplication::beep();
         emit message(tr("Время падения ампулы = %1 мс").arg(timeDrop.elapsed()),Shared::warning);
-        covers->closeCovers();
         sampleLock->lockClose();
+        QTimer::singleShot(50,covers,SLOT(closeCovers()));
     }
 }
 
