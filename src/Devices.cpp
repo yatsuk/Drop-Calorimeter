@@ -116,8 +116,8 @@ void Covers::openTopCover()
 {
     higthVoltage();
     ltr43_->writePort(3, 4, true);
-    QTimer::singleShot(1000,this,SLOT(lowVoltage()));
-    QTimer::singleShot(2000,this,SLOT(openTopCoverByTimer()));
+    QTimer::singleShot(3000,this,SLOT(lowVoltage()));
+    QTimer::singleShot(4000,this,SLOT(openTopCoverByTimer()));
     timerTopCoverIsStop = false;
 }
 
@@ -132,8 +132,8 @@ void Covers::openBottomCover()
 {
     higthVoltage();
     ltr43_->writePort(3, 1, true);
-    QTimer::singleShot(1000,this,SLOT(lowVoltage()));
-    QTimer::singleShot(2000,this,SLOT(openBottomCoverByTimer()));
+    QTimer::singleShot(3000,this,SLOT(lowVoltage()));
+    QTimer::singleShot(4000,this,SLOT(openBottomCoverByTimer()));
     timerBottomCoverIsStop = false;
 }
 
@@ -157,9 +157,9 @@ void Covers::openCovers()
 {
     higthVoltage();
     ltr43_->writePort(3, 1 | 4, true);
-    QTimer::singleShot(1000,this,SLOT(lowVoltage()));
-    QTimer::singleShot(1000,this,SLOT(closeTopCoverByTimer()));
-    QTimer::singleShot(2000,this,SLOT(openBottomCoverByTimer()));
+    QTimer::singleShot(3000,this,SLOT(lowVoltage()));
+    QTimer::singleShot(4000,this,SLOT(openTopCoverByTimer()));
+    QTimer::singleShot(4000,this,SLOT(openBottomCoverByTimer()));
     timerTopCoverIsStop = false;
     timerBottomCoverIsStop = false;
 }
@@ -277,7 +277,7 @@ void SampleLock::lockOpen()
         lockIsOpen = true;
         emit message(tr("Замок открыт."),Shared::information);
         emit openLockSignal();
-        QTimer::singleShot(1500,this,SLOT(lowVoltage()));
+        QTimer::singleShot(3000,this,SLOT(lowVoltage()));
     }
 }
 
@@ -371,9 +371,15 @@ void DropDevice::dropped()
 {
     if (isInited){
         QApplication::beep();
-        emit message(tr("Время падения ампулы = %1 мс").arg(timeDrop.elapsed()),Shared::warning);
+        qint64 dropDuration = timeDrop.elapsed();
         sampleLock->lockClose();
-        QTimer::singleShot(50,covers,SLOT(closeCovers()));
+        if (dropDuration < 300){
+            emit message(tr("Сбой детектирования пролета ампулы. Маленькое время пролета. "
+                            "Время падения ампулы = %1 мс").arg(dropDuration),Shared::critical);
+        } else {
+            emit message(tr("Время падения ампулы = %1 мс").arg(dropDuration),Shared::warning);
+            QTimer::singleShot(50,covers,SLOT(closeCovers()));
+        }
     }
 }
 
@@ -400,7 +406,7 @@ void DropDevice::openLockSample()
 void DropDevice::topCoverOpened()
 {
     topCoverState = CoverState::Open;
-    if (dropReady)
+    if (dropReady && bottomCoverState == CoverState::Open)
         openLockSample();
 }
 
@@ -420,7 +426,7 @@ void DropDevice::topCoverClosed()
 void DropDevice::bottomCoverOpened()
 {
     bottomCoverState = CoverState::Open;
-    if (dropReady)
+    if (dropReady && topCoverState == CoverState::Open)
         openLockSample();
 }
 
