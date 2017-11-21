@@ -90,13 +90,18 @@ void Regulator::calculatePower(double value){
 
     prevError = error;
 
-    if (qAbs((integral+error))*parameters_.gI<parameters_.maxIntegralValue)
-        integral += error;
+    power = parameters_.offset + (error*parameters_.gP)+(derivative*parameters_.gD)+((integral+error)*parameters_.gI);
 
-    power = parameters_.offset + (error*parameters_.gP)+(derivative*parameters_.gD)+(integral*parameters_.gI);
+    if ((qAbs(integral+error)*parameters_.gI<parameters_.maxIntegralValue)
+            &&  (power <= parameters_.maxPower)
+            &&  (power >= parameters_.minPower)){
+        integral += error;
+    }
+
+
+
     if (power>parameters_.maxPower){
         power = parameters_.maxPower;
-        integral -= error;
     } else if (power < parameters_.minPower){
         power = parameters_.minPower;
     }
