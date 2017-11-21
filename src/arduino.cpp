@@ -1,5 +1,6 @@
 #include "arduino.h"
 #include <QTimer>
+#include <QRegExp>
 #include <QDebug>
 
 Arduino::Arduino(QObject *parent) :
@@ -27,28 +28,24 @@ void Arduino::readData(){
 
 void Arduino::parseArduinoMessage(const QString & msg)
 {
-    if (msg.startsWith("drop")){
+    if (msg.startsWith("drop ok")){
         emit message(tr("Ампула сброшена."),Shared::information);
         emit message(msg,Shared::information);
         emit droped();
-    } else if (msg.startsWith("fail: drop timeout")){
-        emit message(tr("Пролет ампулы не зафиксирован."),Shared::warning);
+    } else if (msg.startsWith("drop fail")){
+        emit message(tr("Пролет ампулы не зафиксирован."),Shared::critical);
         emit message(msg,Shared::information);
-    }else if (msg.startsWith("Test fotoresistor")){
-        QStringList splittedMsg = msg.split("=");
-        bool ok;
-        double resistorValue = splittedMsg[1].trimmed().toDouble(&ok);
+    }else if (msg.startsWith("End test: fail")){
         dropSensorBrokenNotAck = false;
-        if (resistorValue > 1000 || !ok){
-            emit message(tr("Неисправность детектора пролета ампулы. "
-                            "Ошибка получения сопритивления фоторезистора или поломка светодиода. "
-                            "Сопротивление фоторезистора = %1").arg(resistorValue),Shared::warning);
-        }
+        emit message(tr("Неисправность детектора пролета ампулы. "),Shared::critical);
+    }else if (msg.startsWith("End test: ok")){
+        dropSensorBrokenNotAck = false;
+        emit message(tr("Детектор пролета ампулы исправен. "),Shared::information);
     } else if (msg == "led_pin, HIGH"){
         emit message(tr("Светодиод системы детектирования пролета ампулы включен."),Shared::information);
     } else if (msg == "led_pin, LOW"){
         emit message(tr("Светодиод системы детектирования пролета ампулы выключен."),Shared::information);
-    } else if (msg == "ADC start"){
+    } else if (msg == "Start detector"){
         emit message(tr("Ожидание сброса ампулы."),Shared::information);
     } else {
         emit message(tr("Arduino message: %1").arg(msg),Shared::information);
@@ -92,7 +89,7 @@ void Arduino::waitDrop()
 bool Arduino::startAck(){
     port->setPortName("COM3");
     if(!port->open(QIODevice::ReadWrite)){
-        emit message(tr("Arduino: Ошибка открытия порта %1").arg(port->portName()),Shared::warning);
+        emit message(tr("Arduino: Ошибка открытия порта %1").arg(port->portName()),Shared::critical);
     }
 
     port->setBaudRate(QSerialPort::Baud115200);
