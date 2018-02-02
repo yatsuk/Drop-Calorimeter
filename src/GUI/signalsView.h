@@ -101,6 +101,9 @@ private:
     QLabel * setPoint;
     QLabel * delta;
     QLabel * segmentInfoLabel;
+    QLabel * pLabel;
+    QLabel * dLabel;
+    QLabel * iLabel;
     QProgressBar * progressBar;
     double durationTimeProgress;
     double elapsedTimeProgress;

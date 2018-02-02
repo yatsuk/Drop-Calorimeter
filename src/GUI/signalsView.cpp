@@ -172,12 +172,21 @@ HeaterSignalsView::HeaterSignalsView(const QString & heaterName, QWidget *parent
     segmentInfoLabel = new QLabel();
     segmentInfoLabel->hide();
 
+    pLabel = new QLabel;
+    dLabel = new QLabel;
+    iLabel = new QLabel;
+    QHBoxLayout * h3Layout = new QHBoxLayout;
+    h3Layout->addWidget(pLabel);
+    h3Layout->addWidget(dLabel);
+    h3Layout->addWidget(iLabel);
+
     QVBoxLayout * groupBoxLayout = new QVBoxLayout;
     groupBoxLayout->addWidget(regulatorMode);
     groupBoxLayout->addLayout(h2Layout);
     groupBoxLayout->addWidget(outPower);
     groupBoxLayout->addWidget(progressBar);
     groupBoxLayout->addWidget(segmentInfoLabel);
+    groupBoxLayout->addLayout(h3Layout);
 
     heaterGroupBox->setLayout(groupBoxLayout);
 
@@ -201,6 +210,12 @@ void HeaterSignalsView::updateState(const QJsonObject & json)
         heaterGroupBox->show();
         outPower->setText(tr("Выходная мощность: %1%")
                           .arg(QString::number(json["out-power"].toDouble(),'f',1)));
+        pLabel->setText(tr("P: %1%")
+                          .arg(QString::number(json["P*delta"].toDouble(),'f',1)));
+        iLabel->setText(tr("I: %1%")
+                          .arg(QString::number(json["I*delta"].toDouble(),'f',2)));
+        dLabel->setText(tr("D: %1%")
+                          .arg(QString::number(json["D*delta"].toDouble(),'f',1)));
         QString mode = json["mode"].toString();
         if (mode=="automatic"){
             regulatorMode->setText(tr("Тип управления: автоматический"));
