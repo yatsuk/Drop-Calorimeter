@@ -4,7 +4,7 @@
 #include <QWidget>
 #include <QJsonObject>
 #include "qcustomplot.h"
-#include "terconData.h"
+#include "src/terconData.h"
 
 class AdvancedQCustomPlot : public QCustomPlot
 {
@@ -22,7 +22,7 @@ private:
 
 class GraphData2{
 public:
-    bool leftYAxis;
+    bool yAxis2;
     QVector <double> x;
     QVector <double> y;
     QString sourceId;

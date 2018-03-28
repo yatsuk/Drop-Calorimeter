@@ -5,7 +5,7 @@
 #include <QFont>
 #include <QtMath>
 #include <QDebug>
-#include "furnace.h"
+#include "src/furnace.h"
 
 FurnaceSignalsView::FurnaceSignalsView(QWidget *parent) :
     QGroupBox(parent)

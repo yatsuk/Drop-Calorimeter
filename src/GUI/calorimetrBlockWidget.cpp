@@ -1,5 +1,5 @@
 #include "calorimetrBlockWidget.h"
-#include "furnace.h"
+#include "src/furnace.h"
 #include <QVBoxLayout>
 
 CalorimetrBlockWidget::CalorimetrBlockWidget(QWidget *parent) :

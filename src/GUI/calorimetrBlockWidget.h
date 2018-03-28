@@ -7,7 +7,7 @@
 #include "calibrationHeaterWidget.h"
 #include "signalsView.h"
 #include "coversWidget.h"
-#include <GUI\qledindicator.h>
+#include "src/GUI/qledindicator.h"
 
 class ExperimentRecorderWidget;
 

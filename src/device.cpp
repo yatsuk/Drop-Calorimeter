@@ -23,6 +23,7 @@ Device * DeviceManager::createDeviceFromJSON(const QJsonObject &parameters)
         if (parameters["type"].toString()=="Tercon"){
             deviceThread = new QThread;
             device = new Tercon;
+
             device->moveToThread(deviceThread);
             deviceThread->start(QThread::HighPriority);
 
@@ -35,7 +36,6 @@ Device * DeviceManager::createDeviceFromJSON(const QJsonObject &parameters)
             }
         }
     }
-
     devices.push_back(qMakePair(deviceThread, device));
     return device;
 }
@@ -44,8 +44,7 @@ bool DeviceManager::destroyDevices()
 {    
     while (!devices.isEmpty()) {
         Device * device = devices.back().second;
-        QThread * deviceThread = devices.back().first;;
-
+        QThread * deviceThread = devices.back().first;
         device->stop();
         device->disconnectDevice();
         deviceThread->quit();

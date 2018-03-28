@@ -69,13 +69,18 @@ void test()
   detachInterrupt(digitalPinToInterrupt(2));
   digitalWrite(4, LOW);
   irValue = digitalRead(2);
-  if (!irValue)
+  if (!irValue){
     testOk = true;
+  }
 
   digitalWrite(4, HIGH);
+  delay(200);
   irValue = digitalRead(2);
-  if (testOk && irValue)
+  if (testOk && irValue){
     testOk = true;
+  } else {
+    testOk = false;
+  }
   
   if (testOk){
     Serial.println("End test: ok");

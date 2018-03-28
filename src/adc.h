@@ -7,7 +7,7 @@
 #include <QVector>
 #include "parameters.h"
 #include "shared.h"
-#include "LTR\ltr27api.h"
+#include "ltr/include/ltr27api.h"
 #include "terconData.h"
 
 

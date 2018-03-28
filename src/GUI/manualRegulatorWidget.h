@@ -7,7 +7,7 @@
 #include <QDoubleSpinBox>
 #include <QPushButton>
 #include <QRadioButton>
-#include "regulator.h"
+#include "src/regulator.h"
 
 class ManualRegulatorWidget : public QGroupBox
 {

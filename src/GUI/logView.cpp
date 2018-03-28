@@ -1,5 +1,5 @@
 #include "logView.h"
-#include "furnace.h"
+#include "src/furnace.h"
 #include <QTime>
 #include <QEvent>
 #include <QKeyEvent>

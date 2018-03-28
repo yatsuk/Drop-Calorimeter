@@ -23,6 +23,7 @@ bool Tercon::initialization()
 
 bool Tercon::setSetting(const QJsonObject &parameters)
 {
+    Device::setSetting(parameters);
     channelArray = parameters["channels"].toArray();
     if (port){
         port->setPortName(parameters["connectionSettings"].toObject()["portName"].toString());
@@ -47,16 +48,13 @@ bool Tercon::connectDevice()
         return false;
 
     port->setBaudRate(QSerialPort::Baud9600);
-    port->setDataBits(QSerialPort::Data8);
-    port->setParity(QSerialPort::NoParity);
-    port->setStopBits(QSerialPort::OneStop);
-    port->setFlowControl(QSerialPort::NoFlowControl);
 
     if(!port->open(QIODevice::ReadOnly)){
         emit message(tr("Ошибка открытия порта %1").arg(port->portName()),Shared::warning);
         return false;
     }
 
+    port->setRequestToSend(false);
     return true;
 }
 

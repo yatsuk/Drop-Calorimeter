@@ -2,7 +2,7 @@
 #include <QGridLayout>
 #include <QSpacerItem>
 #include <QVBoxLayout>
-#include "furnace.h"
+#include "src/furnace.h"
 
 CalibrationHeaterWidget::CalibrationHeaterWidget(QWidget *parent) :
     QGroupBox(parent)

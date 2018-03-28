@@ -2,7 +2,7 @@
 #define DIALOGPARAMETERSREGULATOR_H
 
 #include <QDialog>
-#include "parameters.h"
+#include "src/parameters.h"
 
 namespace Ui {
 class DialogParametersRegulator;

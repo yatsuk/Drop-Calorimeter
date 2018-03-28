@@ -2,9 +2,9 @@
 #define DAC_H
 
 #include <QObject>
-#include "LTR\ltrapi.h"
+#include "ltr/include/ltrapi.h"
 #include "shared.h"
-#include "LTR\ltr34api.h"
+#include "ltr/include/ltr34api.h"
 
 class DAC : public QObject
 {

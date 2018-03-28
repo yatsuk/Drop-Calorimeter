@@ -87,7 +87,7 @@ void Arduino::waitDrop()
 }
 
 bool Arduino::startAck(){
-    port->setPortName("COM3");
+    port->setPortName("ttyUSB0");
     if(!port->open(QIODevice::ReadWrite)){
         emit message(tr("Arduino: Ошибка открытия порта %1").arg(port->portName()),Shared::critical);
     }

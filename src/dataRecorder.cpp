@@ -170,7 +170,7 @@ void FileRecorder::startRecordExperiment(int count)
         QString experimentName = "Experiment_" + QString::number(count);
         currentDir.mkdir(experimentName);
 
-        file->setFileName(path_ +"\\"+experimentName+"\\"+ fileSettings["fileName"].toString()
+        file->setFileName(path_ +"/"+experimentName+"/"+ fileSettings["fileName"].toString()
                 + "." + fileSettings["fileExtension"].toString());
         if(file->open(QIODevice::ReadWrite)){
             for (int i = 0; i < columns.size(); ++i) {

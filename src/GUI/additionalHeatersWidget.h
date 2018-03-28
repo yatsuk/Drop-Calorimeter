@@ -7,11 +7,11 @@
 #include <QPushButton>
 #include <QRadioButton>
 #include <QDoubleSpinBox>
-#include <GUI\qledindicator.h>
+#include "src/GUI/qledindicator.h"
 
 #include "dialogParametersRegulator.h"
 #include "manualRegulatorWidget.h"
-#include "regulator.h"
+#include "src/regulator.h"
 
 class ConstValueRegulatorWidget : public QGroupBox
 {

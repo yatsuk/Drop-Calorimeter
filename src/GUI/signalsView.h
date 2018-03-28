@@ -9,8 +9,8 @@
 #include <QVector>
 #include <QVBoxLayout>
 #include <QJsonObject>
-#include <GUI\qledindicator.h>
-#include "terconData.h"
+#include "src/GUI/qledindicator.h"
+#include "src/terconData.h"
 #include "widgetRegulatorFurnace.h"
 #include "additionalHeatersWidget.h"
 

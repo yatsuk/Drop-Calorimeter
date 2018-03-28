@@ -531,7 +531,7 @@ void Furnace::saveJSONSettings()
 
 void Furnace::loadJSONSettings()
 {
-    QFile loadFile("settings\\settings.json");
+    QFile loadFile("settings/settings.json");
     
     if (!loadFile.open(QIODevice::ReadOnly)) {
         qWarning("Couldn't open save file.");

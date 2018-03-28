@@ -7,9 +7,9 @@
 #include <QTableWidget>
 #include <QPushButton>
 #include <QRadioButton>
-#include "temperatureSegment.h"
+#include "src/temperatureSegment.h"
 #include "addTempSegmentDialog.h"
-#include "segments.h"
+#include "src/segments.h"
 
 class AutomaticRegulatorWidget : public QGroupBox
 {

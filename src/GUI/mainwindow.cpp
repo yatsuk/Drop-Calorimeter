@@ -4,7 +4,7 @@
 #include <QMessageBox>
 #include <QDebug>
 
-#include "terconData.h"
+#include "src/terconData.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QWidget(parent)

@@ -39,7 +39,7 @@ void ChartWidget::initGraph()
 void ChartWidget::setPlotTitle(const QString & text)
 {
     plot->plotLayout()->insertRow(0);
-    plot->plotLayout()->addElement(0, 0, new QCPPlotTitle(plot, text));
+    plot->plotLayout()->addElement(0, 0, new QCPTextElement(plot, text, QFont("sans", 12, QFont::Bold)));
 }
 
 void ChartWidget::addSignalFromJSON (const QJsonObject & graphSetting)
@@ -49,10 +49,13 @@ void ChartWidget::addSignalFromJSON (const QJsonObject & graphSetting)
 
     if (graphSetting["YAxes"].toString()==plot->yAxis2->objectName()){
         plot->addGraph(plot->xAxis,plot->yAxis2);
-        graphData.leftYAxis = true;
+        graphData.yAxis2 = true;
+        connect(plot->xAxis, SIGNAL(rangeChanged(QCPRange)), plot->xAxis2, SLOT(setRange(QCPRange)));
     } else {
         plot->addGraph();
-        graphData.leftYAxis = false;
+        graphData.yAxis2 = false;
+        connect(plot->xAxis, SIGNAL(rangeChanged(QCPRange)), plot->xAxis2, SLOT(setRange(QCPRange)));
+        connect(plot->yAxis, SIGNAL(rangeChanged(QCPRange)), plot->yAxis2, SLOT(setRange(QCPRange)));
     }
 
     plot->graph()->setPen(QPen(QColor(graphSetting["color"].toString())));
@@ -70,19 +73,47 @@ void ChartWidget::addAxesFromJSON (const QJsonObject & axesSetting)
     if (axesSetting["orientation"].toString() == "left"){
         plot->yAxis->setObjectName(axesSetting["id"].toString());
         plot->yAxis->setLabel(axesSetting["title"].toString());
+        plot->yAxis2->setVisible(true);
+        plot->yAxis2->setTickLabels(false);
+        plot->yAxis->setNumberFormat("f");
+        plot->yAxis->setNumberPrecision(0);
     } else if (axesSetting["orientation"].toString() == "bottom"){
         plot->xAxis->setObjectName(axesSetting["id"].toString());
         plot->xAxis->setLabel(axesSetting["title"].toString());
+        plot->xAxis2->setVisible(true);
+        plot->xAxis2->setTickLabels(false);
     } else if (axesSetting["orientation"].toString() == "right"){
         plot->yAxis2->setObjectName(axesSetting["id"].toString());
         plot->yAxis2->setLabel(axesSetting["title"].toString());
-        plot->yAxis2->setVisible(true);
+        plot->xAxis2->setVisible(true);
+        plot->xAxis2->setTickLabels(true);
+        plot->yAxis2->setNumberFormat("f");
+        plot->yAxis2->setNumberPrecision(0);
     }
 }
 
 void ChartWidget::addDataTercon(TerconData terconData){
     for (int i = 0; i < graphsData.size(); ++i){
         if(terconData.id==graphsData[i].sourceId){
+            double delta = plot->yAxis->range().upper - plot->yAxis->range().lower;
+            int precision = round(log10(delta));
+
+            if (!graphsData[i].yAxis2){
+            if (precision < 1){
+                    plot->yAxis->setNumberPrecision(abs(precision) + 1);
+                } else {
+                    plot->yAxis->setNumberPrecision(0);
+                }
+            } else {
+                if (precision == 1) {
+                    plot->yAxis2->setNumberPrecision(1);
+                } else if (precision < 1){
+                    plot->yAxis2->setNumberPrecision(abs(precision) + 1);
+                } else {
+                    plot->yAxis2->setNumberPrecision(0);
+                }
+            }
+
             plot->graph(i)->addData(terconData.time/1000.0, terconData.value*graphsData[i].multiplier);
             if (!plot->isZoomed()){
                 plot->rescaleAxes();

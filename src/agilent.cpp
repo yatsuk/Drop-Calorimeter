@@ -9,7 +9,7 @@ Agilent::Agilent(QObject *parent) :
     port = new QSerialPort(this);
     emergencyTimer = new QTimer(this);
 
-    port->setPortName("COM9");
+    port->setPortName("ttyS6");
     connect (emergencyTimer,SIGNAL(timeout()),this,SLOT(initData()));
     connect(port,SIGNAL(readyRead()),this,SLOT(readData()));
 }

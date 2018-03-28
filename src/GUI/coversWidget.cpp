@@ -1,7 +1,7 @@
 #include "coversWidget.h"
 #include <QGridLayout>
 #include <QHBoxLayout>
-#include "furnace.h"
+#include "src/furnace.h"
 
 CoversWidget::CoversWidget(QWidget *parent)
     : QGroupBox(parent)

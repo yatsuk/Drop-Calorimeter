@@ -1,7 +1,7 @@
 #ifndef ADDTEMPSEGMENTDIALOG_H
 #define ADDTEMPSEGMENTDIALOG_H
 
-#include "temperatureSegment.h"
+#include "src/temperatureSegment.h"
 #include <QDialog>
 #include <QComboBox>
 #include <QDoubleSpinBox>

@@ -5,7 +5,7 @@
 #include <QTableWidget>
 #include <QPushButton>
 #include <QTimer>
-#include "diagnostic.h"
+#include "src/diagnostic.h"
 #include "diagnosticSettingWidget.h"
 
 class DiagnosticWidget : public QGroupBox

@@ -4,14 +4,14 @@
 #include <QDialog>
 #include <QPushButton>
 #include <QLabel>
-#include <GUI\qledindicator.h>
-#include "shared.h"
+#include "src/GUI/qledindicator.h"
+#include "src/shared.h"
 #include "automaticRegulatorWidget.h"
 #include "manualRegulatorWidget.h"
 #include "progPowerRegulatorWidget.h"
 #include "diagnosticwidget.h"
 #include "dialogParametersRegulator.h"
-#include "regulator.h"
+#include "src/regulator.h"
 
 class WidgetRegulatorFurnace : public QDialog
 {

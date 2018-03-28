@@ -1,6 +1,6 @@
 #include "adcSettingWidget.h"
 #include "ui_adcSettingWidget.h"
-#include "furnace.h"
+#include "src/furnace.h"
 #include <QDebug>
 
 AdcSettingWidget::AdcSettingWidget(QWidget *parent) :

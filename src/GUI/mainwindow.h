@@ -8,10 +8,9 @@
 #include "logView.h"
 #include "calibrationHeaterWidget.h"
 #include "chartWidget.h"
-#include "furnace.h"
+#include "src/furnace.h"
 #include "calorimetrBlockWidget.h"
 #include "signalsView.h"
-#include "startupWizard.h"
 
 class MainWindow : public QWidget
 {
@@ -32,7 +31,6 @@ protected:
     void closeEvent(QCloseEvent *event);
 
 private:
-    StartupWizard * startupWizard;
     QTabWidget * tab;
     QTabWidget * measurerTabs;
     FurnaceSignalsView * furnaceSignalsView;

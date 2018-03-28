@@ -6,7 +6,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QElapsedTimer>
-#include "shared.h"
+#include "src/shared.h"
 
 class LogView : public QWidget
 {

@@ -10,7 +10,7 @@ Ltr43::Ltr43(QObject *parent) :
 
     calibrHeaterTimer = new QTimer(this);
     calibrHeaterTimer->setSingleShot(true);
-    calibrHeaterTimer->setTimerType(Qt::VeryCoarseTimer);
+    calibrHeaterTimer->setTimerType(Qt::PreciseTimer);
     workTimeCalibrHeater = new QElapsedTimer();
 
     connect (readPortsTimer,SIGNAL(timeout()),this,SLOT(readPorts()));

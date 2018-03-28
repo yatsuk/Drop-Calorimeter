@@ -4,7 +4,7 @@
 #include <QMessageBox>
 #include <QFont>
 #include <QDebug>
-#include "furnace.h"
+#include "src/furnace.h"
 
 ConstValueRegulatorWidget::ConstValueRegulatorWidget(QWidget *parent) :
     QGroupBox(parent)

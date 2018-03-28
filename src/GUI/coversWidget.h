@@ -4,7 +4,7 @@
 #include <QGroupBox>
 #include <QPushButton>
 #include <QLabel>
-#include <GUI\qledindicator.h>
+#include "src/GUI/qledindicator.h"
 
 class CoversWidget : public QGroupBox
 {

@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QThread>
-#include "LTR\ltr114api.h"
+#include "ltr/include/ltr114api.h"
 #include "filter.h"
 #include "shared.h"
 #include "parameters.h"

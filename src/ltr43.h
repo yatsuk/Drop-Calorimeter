@@ -5,7 +5,7 @@
 #include <QTimer>
 #include <QTimerEvent>
 #include <QElapsedTimer>
-#include "LTR\ltr43api.h"
+#include "ltr/include/ltr43api.h"
 #include "shared.h"
 
 class Ltr43 : public QObject
