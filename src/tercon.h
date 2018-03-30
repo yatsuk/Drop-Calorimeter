@@ -3,12 +3,12 @@
 
 #include <QObject>
 #include <QSerialPort>
-#include <QJsonObject>
-#include <QJsonArray>
+#include <include/externals/nlohmann/json/json.hpp>
 #include "device.h"
 #include "terconData.h"
 #include "shared.h"
 
+using json = nlohmann::json;
 
 class Tercon : public Device
 {
@@ -23,7 +23,7 @@ public slots:
     bool stop();
     bool connectDevice();
     bool disconnectDevice();
-    bool setSetting(const QJsonObject &parameters);
+    bool setSetting(const json &parameters);
 
 private slots:
     void readData();
@@ -33,7 +33,7 @@ private slots:
 private:
     QSerialPort * port;
     QByteArray recvBytes;
-    QJsonArray channelArray;
+    json channelArray;
 };
 
 #endif // TERCON_H

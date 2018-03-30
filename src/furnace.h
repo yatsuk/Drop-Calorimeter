@@ -5,9 +5,7 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QSettings>
-#include <QJsonObject>
-#include <QJsonDocument>
-#include <QJsonArray>
+#include <include/externals/nlohmann/json/json.hpp>
 #include "tercon.h"
 #include "diagnostic.h"
 #include "shared.h"
@@ -23,6 +21,7 @@
 #include "arduino.h"
 #include "agilent.h"
 
+using json = nlohmann::json;
 
 class Furnace : public QObject
 {
@@ -41,7 +40,7 @@ public:
     SampleLock * getSampleLock();
     qint64 getElapsedTime();
     static Furnace * instance();
-    QJsonObject getSettings();
+    json getSettings();
     
 signals:
     void AdcTerconDataSend(TerconData);
@@ -104,7 +103,7 @@ private:
     static Furnace * g_furnace;
 
 
-    QJsonObject settings_;
+    json settings_;
     
 };
 

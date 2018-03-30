@@ -4,13 +4,15 @@
 #include <QWidget>
 #include <QTabWidget>
 #include <QTextEdit>
-#include <QJsonObject>
+#include <include/externals/nlohmann/json/json.hpp>
 #include "logView.h"
 #include "calibrationHeaterWidget.h"
 #include "chartWidget.h"
 #include "src/furnace.h"
 #include "calorimetrBlockWidget.h"
 #include "signalsView.h"
+
+using json = nlohmann::json;
 
 class MainWindow : public QWidget
 {
@@ -25,7 +27,7 @@ public slots:
     void loadExperiment();
 
 private slots:
-    void createPlots(const QJsonObject & settings);
+    void createPlots(const json & settings);
 
 protected:
     void closeEvent(QCloseEvent *event);

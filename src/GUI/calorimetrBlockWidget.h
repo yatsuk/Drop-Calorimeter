@@ -7,7 +7,10 @@
 #include "calibrationHeaterWidget.h"
 #include "signalsView.h"
 #include "coversWidget.h"
-#include "src/GUI/qledindicator.h"
+#include <include/externals/qledindicator/qledindicator.h>
+#include <include/externals/nlohmann/json/json.hpp>
+
+using json = nlohmann::json;
 
 class ExperimentRecorderWidget;
 
@@ -20,7 +23,7 @@ public:
 signals:
 
 public slots:
-    void updateState(const QJsonObject & json);
+    void updateState(const json & json);
     void setValue(TerconData terconData);
 
 private:

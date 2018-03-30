@@ -4,12 +4,12 @@
 #include <QObject>
 #include <QMap>
 #include <QVector>
-#include <QJsonObject>
-#include <QJsonArray>
+#include <include/externals/nlohmann/json/json.hpp>
 #include "dataRecorder.h"
 #include "terconData.h"
 #include "filter.h"
 
+using json = nlohmann::json;
 
 class DataManager : public QObject
 {
@@ -24,7 +24,7 @@ signals:
 public slots:
     void addData(TerconData data);
     void addLogMessage(const QString & message);
-    bool setSettings(const QJsonObject &settings);
+    bool setSettings(const json &settings);
     void startRecordExperimentFile();
     void stopRecordExperimentFile();
 

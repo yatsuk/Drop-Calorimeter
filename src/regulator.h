@@ -5,11 +5,13 @@
 #include <QTime>
 #include <QTimer>
 #include <QTextStream>
-#include <QJsonObject>
+#include <include/externals/nlohmann/json/json.hpp>
 #include "segments.h"
 #include "parameters.h"
 #include "shared.h"
 #include "terconData.h"
+
+using json = nlohmann::json;
 
 class Regulator : public QObject
 {
@@ -31,7 +33,7 @@ signals:
     void manualMode();
     void regulatorLogData(const QString & logString);
     void updateParameters();
-    void state(const QJsonObject & json);
+    void state(const json & json);
     
 public slots:
     void setMode(Shared::RegulatorMode regulatorMode);
@@ -94,7 +96,7 @@ private:
 
     Segment * constVelocitySegment_;
 
-    QJsonObject state_;
+    json state_;
 };
 /*
  * Regulator state:

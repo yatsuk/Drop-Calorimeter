@@ -42,12 +42,12 @@ void ChartWidget::setPlotTitle(const QString & text)
     plot->plotLayout()->addElement(0, 0, new QCPTextElement(plot, text, QFont("sans", 12, QFont::Bold)));
 }
 
-void ChartWidget::addSignalFromJSON (const QJsonObject & graphSetting)
+void ChartWidget::addSignalFromJSON (const json & graphSetting)
 {
 
     GraphData2 graphData;
 
-    if (graphSetting["YAxes"].toString()==plot->yAxis2->objectName()){
+    if (graphSetting["YAxes"].get<std::string>().c_str()==plot->yAxis2->objectName()){
         plot->addGraph(plot->xAxis,plot->yAxis2);
         graphData.yAxis2 = true;
         connect(plot->xAxis, SIGNAL(rangeChanged(QCPRange)), plot->xAxis2, SLOT(setRange(QCPRange)));
@@ -58,33 +58,33 @@ void ChartWidget::addSignalFromJSON (const QJsonObject & graphSetting)
         connect(plot->yAxis, SIGNAL(rangeChanged(QCPRange)), plot->yAxis2, SLOT(setRange(QCPRange)));
     }
 
-    plot->graph()->setPen(QPen(QColor(graphSetting["color"].toString())));
-    plot->graph()->setName(graphSetting["title"].toString());
+    plot->graph()->setPen(QPen(QColor(graphSetting["color"].get<std::string>().c_str())));
+    plot->graph()->setName(graphSetting["title"].get<std::string>().c_str());
 
-    graphData.sourceId = graphSetting["source"].toString();
-    graphData.multiplier = graphSetting["multiplier"].toInt();
+    graphData.sourceId = graphSetting["source"].get<std::string>().c_str();
+    graphData.multiplier = graphSetting["multiplier"];
     graphsData.append(graphData);
 
     plot->replot();
 }
 
-void ChartWidget::addAxesFromJSON (const QJsonObject & axesSetting)
+void ChartWidget::addAxesFromJSON (const json &axesSetting)
 {
-    if (axesSetting["orientation"].toString() == "left"){
-        plot->yAxis->setObjectName(axesSetting["id"].toString());
-        plot->yAxis->setLabel(axesSetting["title"].toString());
+    if (axesSetting["orientation"].get<std::string>().c_str() == "left"){
+        plot->yAxis->setObjectName(axesSetting["id"].get<std::string>().c_str());
+        plot->yAxis->setLabel(axesSetting["title"].get<std::string>().c_str());
         plot->yAxis2->setVisible(true);
         plot->yAxis2->setTickLabels(false);
         plot->yAxis->setNumberFormat("f");
         plot->yAxis->setNumberPrecision(0);
-    } else if (axesSetting["orientation"].toString() == "bottom"){
-        plot->xAxis->setObjectName(axesSetting["id"].toString());
-        plot->xAxis->setLabel(axesSetting["title"].toString());
+    } else if (axesSetting["orientation"].get<std::string>().c_str() == "bottom"){
+        plot->xAxis->setObjectName(axesSetting["id"].get<std::string>().c_str());
+        plot->xAxis->setLabel(axesSetting["title"].get<std::string>().c_str());
         plot->xAxis2->setVisible(true);
         plot->xAxis2->setTickLabels(false);
-    } else if (axesSetting["orientation"].toString() == "right"){
-        plot->yAxis2->setObjectName(axesSetting["id"].toString());
-        plot->yAxis2->setLabel(axesSetting["title"].toString());
+    } else if (axesSetting["orientation"].get<std::string>().c_str() == "right"){
+        plot->yAxis2->setObjectName(axesSetting["id"].get<std::string>().c_str());
+        plot->yAxis2->setLabel(axesSetting["title"].get<std::string>().c_str());
         plot->xAxis2->setVisible(true);
         plot->xAxis2->setTickLabels(true);
         plot->yAxis2->setNumberFormat("f");

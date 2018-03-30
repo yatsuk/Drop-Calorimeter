@@ -25,7 +25,7 @@ CalorimetrBlockWidget::CalorimetrBlockWidget(QWidget *parent) :
     setLayout(layout);
 }
 
-void CalorimetrBlockWidget::updateState(const QJsonObject & json)
+void CalorimetrBlockWidget::updateState(const json & json)
 {
     calorimeterSignalsView->updateState(json);
 }

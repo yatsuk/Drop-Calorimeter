@@ -14,13 +14,13 @@ DeviceManager::~DeviceManager()
 
 }
 
-Device * DeviceManager::createDeviceFromJSON(const QJsonObject &parameters)
+Device * DeviceManager::createDeviceFromJSON(const json &parameters)
 {
     Device * device = 0;
     QThread * deviceThread = 0;
 
-    if (!parameters.isEmpty()){
-        if (parameters["type"].toString()=="Tercon"){
+    if (!parameters.empty()){
+        if (parameters["type"].get<std::string>().c_str()=="Tercon"){
             deviceThread = new QThread;
             device = new Tercon;
 
@@ -30,7 +30,7 @@ Device * DeviceManager::createDeviceFromJSON(const QJsonObject &parameters)
             if(!device->initialization()){
                 qDebug() << "initialization fail";
             }
-            device->setObjectName(parameters["id"].toString());
+            device->setObjectName(parameters["id"].get<std::string>().c_str());
             if(!device->setSetting(parameters)){
                 qDebug() << "set settings fail";
             }

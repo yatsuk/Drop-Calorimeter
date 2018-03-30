@@ -2,11 +2,12 @@
 #define FILTER_H
 
 #include <QObject>
-#include <QJsonObject>
-#include <QJsonArray>
+#include <include/externals/nlohmann/json/json.hpp>
 #include <QMap>
 #include "shared.h"
 #include "terconData.h"
+
+using json = nlohmann::json;
 
 class Filter : public QObject
 {
@@ -20,13 +21,13 @@ signals:
     void message(const QString & msg, Shared::MessageLevel msgLevel);
 
 public slots:
-    virtual void setSetting(const QJsonObject &parameters){parameters_ = parameters;}
-    virtual QJsonObject getSetting(){return parameters_;}
-    static  Filter * createFilterFromJSON(const QJsonObject &parameters);
+    virtual void setSetting(const json &parameters){parameters_ = parameters;}
+    virtual json getSetting(){return parameters_;}
+    static  Filter * createFilterFromJSON(const json &parameters);
     void addData(TerconData data);
 
 protected:
-    QJsonObject parameters_;
+    json parameters_;
     virtual double receive(TerconData , bool * ok = 0){return 0;if(ok)*ok=false;}
 };
 
@@ -34,7 +35,7 @@ protected:
 class MovingAverage: public Filter
 {
 public:
-    void setSetting(const QJsonObject &parameters);
+    void setSetting(const json &parameters);
 
 protected:
     virtual double receive(TerconData data, bool * ok = 0);
@@ -52,7 +53,7 @@ private:
 class BlowoutRemover: public Filter
 {
 public:
-    void setSetting(const QJsonObject &parameters);
+    void setSetting(const json &parameters);
 
 protected:
     virtual double receive(TerconData data, bool * ok = 0);
@@ -68,7 +69,7 @@ class TermocoupleConverter: public Filter
 {
 
 public:
-    void setSetting(const QJsonObject &parameters);
+    void setSetting(const json &parameters);
 
 protected:
     virtual double receive(TerconData data, bool * ok = 0);

@@ -17,15 +17,15 @@ DataRecorder::~DataRecorder()
 
 }
 
-DataRecorder * DataRecorder::createDataRecorderFromJSON(const QJsonObject &parameters)
+DataRecorder * DataRecorder::createDataRecorderFromJSON(const json &parameters)
 {
     DataRecorder * dataRecorder = 0;
-    if (!parameters.isEmpty()){
-        if (parameters["type"].toString()=="File"){
+    if (!parameters.empty()){
+        if (QString::compare(parameters["type"].get<std::string>().c_str(), "File") == 0){
             dataRecorder = new FileRecorder;
         }
         if (dataRecorder){
-            dataRecorder->setObjectName(parameters["id"].toString());
+            dataRecorder->setObjectName(parameters["id"].get<std::string>().c_str());
             dataRecorder->setSetting(parameters);
         }
     }
@@ -54,33 +54,33 @@ FileRecorder::~FileRecorder()
     delete file;
 }
 
-void FileRecorder::setSetting(const QJsonObject &parameters)
+void FileRecorder::setSetting(const json &parameters)
 {
-    QJsonObject fileSettings = parameters["settings"].toObject();
-    if(fileSettings.isEmpty())return;
+    json fileSettings = parameters["settings"];
+    if(fileSettings.empty())return;
 
-    file = new QFile(path_ + fileSettings["fileName"].toString() + "."
-            + fileSettings["fileExtension"].toString());
+    file = new QFile(path_ + fileSettings["fileName"].get<std::string>().c_str() + "."
+            + fileSettings["fileExtension"].get<std::string>().c_str());
 
-    QJsonArray columnsInfo = fileSettings["columns"].toArray();
-    for (int i = 0; i < columnsInfo.size(); ++i) {
-        QJsonObject columnInfoObject = columnsInfo[i].toObject();
+    json columnsInfo = fileSettings["columns"];
+    for (unsigned int i = 0; i < columnsInfo.size(); ++i) {
+        json columnInfoObject = columnsInfo[i];
         ColumnInfo columnInfo;
         columnInfo.precision = -1;
         columnInfo.isSetData = false;
-        columnInfo.idSource = columnInfoObject["source"].toString();
-        columnInfo.title = columnInfoObject["title"].toString();
-        if (columnInfoObject["type"].toString()=="Value"){
+        columnInfo.idSource = columnInfoObject["source"].get<std::string>().c_str();
+        columnInfo.title = columnInfoObject["title"].get<std::string>().c_str();
+        if (QString::compare(columnInfoObject["type"].get<std::string>().c_str(), "Value") == 0){
             columnInfo.type = ColumnInfo::Value;
-            columnInfo.multiplier = columnInfoObject["multiplier"].toDouble();
-            columnInfo.precision = columnInfoObject["precision"].toInt();
-        } else if (columnInfoObject["type"].toString()=="Time"){
+            columnInfo.multiplier = columnInfoObject["multiplier"];
+            columnInfo.precision = columnInfoObject["precision"];
+        } else if (QString::compare(columnInfoObject["type"].get<std::string>().c_str(), "Time") == 0){
             columnInfo.type = ColumnInfo::Time;
-        } else if (columnInfoObject["type"].toString()=="Message"){
+        } else if (QString::compare(columnInfoObject["type"].get<std::string>().c_str(), "Message") == 0){
             columnInfo.type = ColumnInfo::Message;
-        } else if (columnInfoObject["type"].toString()=="Unit"){
+        } else if (QString::compare(columnInfoObject["type"].get<std::string>().c_str(), "Unit") == 0){
             columnInfo.type = ColumnInfo::Unit;
-        } else if (columnInfoObject["type"].toString()=="Id"){
+        } else if (QString::compare(columnInfoObject["type"].get<std::string>().c_str(), "Id") == 0){
             columnInfo.type = ColumnInfo::Id;
         } else {
             columnInfo.type = ColumnInfo::Undef;
@@ -88,12 +88,12 @@ void FileRecorder::setSetting(const QJsonObject &parameters)
         columns.append(columnInfo);
     }
 
-    if (!fileSettings["isStartStopRecord"].toBool()){
+    if (!fileSettings["isStartStopRecord"]){
         if(file->open(QIODevice::ReadWrite)){
             for (int i = 0; i < columns.size(); ++i) {
                 file->write(columns[i].title.toUtf8());
                 if (i != columns.size() - 1){
-                    file->write(fileSettings["columnSeparator"].toString().toUtf8());
+                    file->write(fileSettings["columnSeparator"].get<std::string>().c_str());
                 } else {
                     file->write("\r\n");
                 }
@@ -140,12 +140,12 @@ void FileRecorder::addData(TerconData data)
         if (!columns[j].isSetData) break;
     }
     if (j == columns.size() && file->isOpen()){
-        QJsonObject fileSettings = parameters_["settings"].toObject();
+        json fileSettings = parameters_["settings"];
         for (int i = 0; i < columns.size(); ++i) {
             columns[i].isSetData = false;
             file->write(columns[i].value.toUtf8());
             if (i != columns.size() - 1){
-                file->write(fileSettings["columnSeparator"].toString().toUtf8());
+                file->write(fileSettings["columnSeparator"].get<std::string>().c_str());
             } else {
                 file->write("\r\n");
                 file->flush();
@@ -164,19 +164,19 @@ void FileRecorder::writeLine(const QString & str)
 
 void FileRecorder::startRecordExperiment(int count)
 {
-    QJsonObject fileSettings = parameters_["settings"].toObject();
-    if (fileSettings["isStartStopRecord"].toBool()){
+    json fileSettings = parameters_["settings"];
+    if (fileSettings["isStartStopRecord"]){
         QDir currentDir(path_);
         QString experimentName = "Experiment_" + QString::number(count);
         currentDir.mkdir(experimentName);
 
-        file->setFileName(path_ +"/"+experimentName+"/"+ fileSettings["fileName"].toString()
-                + "." + fileSettings["fileExtension"].toString());
+        file->setFileName(path_ +"/"+experimentName+"/"+ fileSettings["fileName"].get<std::string>().c_str()
+                + "." + fileSettings["fileExtension"].get<std::string>().c_str());
         if(file->open(QIODevice::ReadWrite)){
             for (int i = 0; i < columns.size(); ++i) {
                 file->write(columns[i].title.toUtf8());
                 if (i != columns.size() - 1){
-                    file->write(fileSettings["columnSeparator"].toString().toUtf8());
+                    file->write(fileSettings["columnSeparator"].get<std::string>().c_str());
                 } else {
                     file->write("\r\n");
                 }
@@ -187,8 +187,8 @@ void FileRecorder::startRecordExperiment(int count)
 
 void FileRecorder::stopRecordExperiment()
 {
-    QJsonObject fileSettings = parameters_["settings"].toObject();
-    if (fileSettings["isStartStopRecord"].toBool()){
+    json fileSettings = parameters_["settings"];
+    if (fileSettings["isStartStopRecord"]){
         file->close();
     }
 }

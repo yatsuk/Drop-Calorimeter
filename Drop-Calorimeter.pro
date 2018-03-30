@@ -11,8 +11,6 @@ TARGET = Drop-Calorimeter
 TEMPLATE = app
 CONFIG += c++14
 
-INCLUDEPATH = $$PWD/include
-
 SOURCES += src/main.cpp\
     src/temperatureSegment.cpp \
     src/segments.cpp \
@@ -43,14 +41,14 @@ SOURCES += src/main.cpp\
     src/GUI/mainwindow.cpp \
     src/GUI/manualRegulatorWidget.cpp \
     src/GUI/progPowerRegulatorWidget.cpp \
-    src/GUI/qcustomplot.cpp \
-    src/GUI/qledindicator.cpp \
     src/GUI/signalsView.cpp \
     src/GUI/widgetRegulatorFurnace.cpp \
     src/device.cpp \
     src/filter.cpp \
     src/data_manager.cpp \
-    src/agilent.cpp
+    src/agilent.cpp \
+    include/externals/qcustomplot/qcustomplot.cpp \
+    include/externals/qledindicator/qledindicator.cpp
 
 HEADERS  += src/shared.h \
     src/parameters.h \
@@ -84,14 +82,15 @@ HEADERS  += src/shared.h \
     src/GUI/mainwindow.h \
     src/GUI/manualRegulatorWidget.h \
     src/GUI/progPowerRegulatorWidget.h \
-    src/GUI/qcustomplot.h \
-    src/GUI/qledindicator.h \
     src/GUI/signalsView.h \
     src/GUI/widgetRegulatorFurnace.h \
     src/device.h \
     src/filter.h \
     src/data_manager.h \
-    src/agilent.h
+    src/agilent.h \
+    include/externals/nlohmann/json/json.hpp \
+    include/externals/qledindicator/qledindicator.h \
+    include/externals/qcustomplot/qcustomplot.h
 
 
 win32 {

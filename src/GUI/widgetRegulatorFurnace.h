@@ -4,7 +4,7 @@
 #include <QDialog>
 #include <QPushButton>
 #include <QLabel>
-#include "src/GUI/qledindicator.h"
+#include <include/externals/qledindicator/qledindicator.h>
 #include "src/shared.h"
 #include "automaticRegulatorWidget.h"
 #include "manualRegulatorWidget.h"

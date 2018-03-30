@@ -211,11 +211,11 @@ void Regulator::setValueADC(double value){
 
             setPoint = segment->requiredTemperature(timeMinutes);
             calculatePower(value);
-            QJsonObject jsonTemperatureSegment;
+            json jsonTemperatureSegment;
             jsonTemperatureSegment["duration"]=segment->duration();
             jsonTemperatureSegment["velocity"]=segment->velocity();
             jsonTemperatureSegment["elapsed-time"]=timeMinutes;
-            jsonTemperatureSegment["type"]=segment->typeTitle();
+            jsonTemperatureSegment["type"]=segment->typeTitle().toStdString();
             state_["temperature-segment"]=jsonTemperatureSegment;
             prepareAndSendState();
         }
@@ -319,7 +319,7 @@ void Regulator::setMode(Shared::RegulatorMode regulatorMode){
     mode = regulatorMode;
     firstValue = true;
 
-    state_["mode"]=convertModeToString(mode);
+    state_["mode"]=convertModeToString(mode).toStdString();
     prepareAndSendState();
 }
 
@@ -390,6 +390,6 @@ QString Regulator::convertModeToString(Shared::RegulatorMode regulatorMode)
 
 void Regulator::prepareAndSendState()
 {
-    state_["sender"]=objectName();
+    state_["sender"]=objectName().toStdString();
     emit state(state_);
 }

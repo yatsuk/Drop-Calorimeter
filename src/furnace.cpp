@@ -1,5 +1,6 @@
 ﻿#include "furnace.h"
 #include <math.h>
+#include <fstream>
 #include <QDebug>
 
 Furnace * Furnace::g_furnace = 0;
@@ -175,11 +176,11 @@ void Furnace::terconDataReceive(TerconData data){
 }
 
 bool Furnace::connectTercon(){
-    if(settings_.isEmpty()) return false;
-    QJsonArray devicesArray = settings_["Devices"].toArray();
-    for (int i = 0; i < devicesArray.size(); ++i) {
-        QJsonObject deviceObject = devicesArray[i].toObject();
-        if (deviceObject.isEmpty())continue;
+    if(settings_.empty()) return false;
+    json devicesArray = settings_["Devices"];
+    for (unsigned int i = 0; i < devicesArray.size(); ++i) {
+        json deviceObject = devicesArray[i];
+        if (deviceObject.empty())continue;
         Device * device = deviceManager->createDeviceFromJSON(deviceObject);
         if (device){
             connect(device,SIGNAL(message(QString,Shared::MessageLevel)),
@@ -360,7 +361,6 @@ void Furnace::run(){
     connect(ltr114,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
     
-    
     dataManager->setSettings(settings_);
     connectTercon();
     
@@ -517,34 +517,23 @@ void Furnace::loadSettings()
 
 void Furnace::saveJSONSettings()
 {
-    /*QFile saveFile(QStringLiteral("settings.json"));
-      
-    if (!saveFile.open(QIODevice::WriteOnly)) {
-        qWarning("Couldn't open save file.");
+    std::ofstream file("settings/settings.json");
+    if(file.is_open()){
+        file << std::setw(4) << settings_;
+        file.close();
     }
-    
-    QJsonObject jsonObject = devices.at(0)->getSetting();
-    
-    QJsonDocument saveDoc(jsonObject);
-    saveFile.write(saveDoc.toJson());*/
 }
 
 void Furnace::loadJSONSettings()
 {
-    QFile loadFile("settings/settings.json");
-    
-    if (!loadFile.open(QIODevice::ReadOnly)) {
-        qWarning("Couldn't open save file.");
+    std::ifstream file("settings/settings.json");
+    if(file.is_open()){
+        file >> settings_;
+        file.close();
     }
-    
-    QByteArray saveData = loadFile.readAll();
-    
-    QJsonDocument loadDoc( QJsonDocument::fromJson(saveData));
-    
-    settings_ = loadDoc.object();
 }
 
-QJsonObject Furnace::getSettings()
+json Furnace::getSettings()
 {
     return settings_;
 }

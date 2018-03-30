@@ -5,7 +5,7 @@
 #include <QPushButton>
 #include <QSpinBox>
 #include <QLabel>
-#include <src/GUI/qledindicator.h>
+#include <include/externals/qledindicator/qledindicator.h>
 
 class CalibrationHeaterWidget : public QGroupBox
 {

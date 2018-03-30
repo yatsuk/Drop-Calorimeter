@@ -13,19 +13,19 @@ Filter::~Filter()
 
 }
 
-Filter * Filter::createFilterFromJSON(const QJsonObject &parameters)
+Filter * Filter::createFilterFromJSON(const json &parameters)
 {
     Filter * filter = 0;
-    if (!parameters.isEmpty()){
-        if (parameters["type"].toString()=="Thermocouple"){
+    if (!parameters.empty()){
+        if (parameters["type"].get<std::string>()=="Thermocouple"){
             filter = new TermocoupleConverter;
-        } else if (parameters["type"].toString()=="MA"){
+        } else if (parameters["type"].get<std::string>()=="MA"){
             filter = new MovingAverage;
-        } else if (parameters["type"].toString()=="BlowoutRemover"){
+        } else if (parameters["type"].get<std::string>()=="BlowoutRemover"){
             filter = new BlowoutRemover;
         }
         if (filter){
-            filter->setObjectName(parameters["id"].toString());
+            filter->setObjectName(parameters["id"].get<std::string>().c_str());
             filter->setSetting(parameters);
         }
     }
@@ -34,17 +34,17 @@ Filter * Filter::createFilterFromJSON(const QJsonObject &parameters)
 
 void Filter::addData(TerconData data)
 {
-    QJsonObject settings = parameters_["settings"].toObject();
-    if (settings["sourceId"].toString() ==data.id){
+    json settings = parameters_["settings"];
+    if (settings["sourceId"].get<std::string>().c_str() ==data.id){
         TerconData newData;
-        newData.id = settings["newId"].toString();
+        newData.id = settings["newId"].get<std::string>().c_str();
         newData.time = data.time;
         bool ok;
         newData.value = receive(data, &ok);
         if(!ok)
             return;
 
-        newData.unit = settings["unit"].toString();
+        newData.unit = settings["unit"].get<std::string>().c_str();
         emit dataSend(newData);
     }
 }
@@ -65,14 +65,14 @@ double MovingAverage::receive(TerconData data, bool * ok)
     return 0;
 }
 
-void MovingAverage::setSetting(const QJsonObject &parameters)
+void MovingAverage::setSetting(const json &parameters)
 {
-    QJsonObject averageSettings = parameters["settings"].toObject();
+    json averageSettings = parameters["settings"];
     type = Undef;
     averageCount = 1;
-    if (averageSettings["type"].toString()=="exponential"){
+    if (averageSettings["type"].get<std::string>()=="exponential"){
         type = Exponential;
-        averageCount = averageSettings["averageCount"].toInt();
+        averageCount = averageSettings["averageCount"];
         alpha = 2.0 / (averageCount + 1.0);
     }
 
@@ -107,20 +107,21 @@ double BlowoutRemover::receive(TerconData data, bool * ok)
     return 0;
 }
 
-void BlowoutRemover::setSetting(const QJsonObject &parameters)
+void BlowoutRemover::setSetting(const json &parameters)
 {
     movingAverage.setSetting(parameters);
-    /*QJsonObject averageSettings = parameters["settings"].toObject();
+    /*json averageSettings = parameters["settings"];
     type = Undef;
     averageCount = 1;
-    if (averageSettings["type"].toString()=="exponential"){
+    if (averageSettings["type"].get<std::string>().c_str()=="exponential"){
         type = Exponential;
-        averageCount = averageSettings["averageCount"].toInt();
+        averageCount = averageSettings["averageCount"];
         alpha = 2.0 / (averageCount + 1.0);
     }
 
     parameters_ = parameters;
     firstValue_ = true;*/
+    parameters_ = parameters;
 }
 
 
@@ -144,17 +145,17 @@ double TermocoupleConverter::receive(TerconData data, bool * ok)
     return 0;
 }
 
-void TermocoupleConverter::setSetting(const QJsonObject &parameters)
+void TermocoupleConverter::setSetting(const json &parameters)
 {
-    QJsonObject thermocoupleSettings = parameters["settings"].toObject();
+    json thermocoupleSettings = parameters["settings"];
     type = Undef;
     coldVoltage = 0;
-    if (thermocoupleSettings["type"].toString()=="S"){
+    if (thermocoupleSettings["type"].get<std::string>()=="S"){
         type = S;
-        coldVoltage = temperatureToVoltageTypeS(thermocoupleSettings["coldTemperature"].toDouble());
-    } else if (thermocoupleSettings["type"].toString()=="A1"){
+        coldVoltage = temperatureToVoltageTypeS(thermocoupleSettings["coldTemperature"]);
+    } else if (thermocoupleSettings["type"].get<std::string>()=="A1"){
         type = A1;
-        coldVoltage = temperatureToVoltageTypeA1(thermocoupleSettings["coldTemperature"].toDouble());
+        coldVoltage = temperatureToVoltageTypeA1(thermocoupleSettings["coldTemperature"]);
     }
 
     parameters_ = parameters;

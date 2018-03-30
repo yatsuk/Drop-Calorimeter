@@ -24,13 +24,13 @@ void DataManager::addData(TerconData data)
 
 }
 
-bool DataManager::setSettings(const QJsonObject &settings)
+bool DataManager::setSettings(const json &settings)
 {
-    if(settings.isEmpty()) return false;
-    QJsonArray filtersArray = settings["DataManager"].toObject()["filters"].toArray();
-    for (int i = 0; i < filtersArray.size(); ++i) {
-        QJsonObject filterObject = filtersArray[i].toObject();
-        if (filterObject.isEmpty())continue;
+    if(settings.empty()) return false;
+    json filtersArray = settings["DataManager"]["filters"];
+    for (unsigned int i = 0; i < filtersArray.size(); ++i) {
+        json filterObject = filtersArray[i];
+        if (filterObject.empty())continue;
         Filter * filter = Filter::createFilterFromJSON(filterObject);
         if (filter){
             filters.append(filter);
@@ -39,11 +39,11 @@ bool DataManager::setSettings(const QJsonObject &settings)
         }
     }
 
-    QJsonObject storage = settings["DataManager"].toObject()["storage"].toObject();
-    QJsonArray recordsArray = storage["records"].toArray();
-    for (int i = 0; i < recordsArray.size(); ++i) {
-        QJsonObject recordObject = recordsArray[i].toObject();
-        if (recordObject.isEmpty())continue;
+    json storage = settings["DataManager"]["storage"];
+    json recordsArray = storage["records"];
+    for (unsigned int i = 0; i < recordsArray.size(); ++i) {
+        json recordObject = recordsArray[i];
+        if (recordObject.empty())continue;
         DataRecorder * dataRecorder = DataRecorder::createDataRecorderFromJSON(recordObject);
         if (dataRecorder){
             dataRecorders.append(dataRecorder);

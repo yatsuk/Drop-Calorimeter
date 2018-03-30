@@ -89,14 +89,14 @@ void MainWindow::beginNewExperiment()
     connect(furnace,SIGNAL(AdcTerconDataSend(TerconData)),
             calorimetrBlockWidget,SLOT(setValue(TerconData)));
 
-    connect(furnace->regulatorFurnace(),SIGNAL(state(QJsonObject)),
-            furnaceSignalsView,SLOT(updateState(QJsonObject)));
-    connect(furnace->regulatorUpHeater(),SIGNAL(state(QJsonObject)),
-            furnaceSignalsView,SLOT(updateState(QJsonObject)));
-    connect(furnace->regulatorDownHeater(),SIGNAL(state(QJsonObject)),
-            furnaceSignalsView,SLOT(updateState(QJsonObject)));
-    connect(furnace->regulatorThermostat(),SIGNAL(state(QJsonObject)),
-            calorimetrBlockWidget,SLOT(updateState(QJsonObject)));
+    connect(furnace->regulatorFurnace(),SIGNAL(state(json)),
+            furnaceSignalsView,SLOT(updateState(json)));
+    connect(furnace->regulatorUpHeater(),SIGNAL(state(json)),
+            furnaceSignalsView,SLOT(updateState(json)));
+    connect(furnace->regulatorDownHeater(),SIGNAL(state(json)),
+            furnaceSignalsView,SLOT(updateState(json)));
+    connect(furnace->regulatorThermostat(),SIGNAL(state(json)),
+            calorimetrBlockWidget,SLOT(updateState(json)));
 
 }
 
@@ -105,35 +105,36 @@ void MainWindow::loadExperiment()
 
 }
 
-void MainWindow::createPlots(const QJsonObject & settings)
+void MainWindow::createPlots(const json &settings)
 {
-    if(settings.isEmpty()) return;
-    QJsonObject guiSettings = settings["GUI"].toObject();
-    QJsonArray plotsArray = guiSettings["plots"].toArray();
-    for (int indexPlots = 0; indexPlots < plotsArray.size(); ++indexPlots) {
-        QJsonObject plotJsonObject = plotsArray[indexPlots].toObject();
-        if(plotJsonObject.isEmpty()) continue;
+    if(settings.empty()) return;
+    json guiSettings = settings["GUI"];
+    json plotsArray = guiSettings["plots"];
+
+    for (unsigned int indexPlots = 0; indexPlots < plotsArray.size(); ++indexPlots) {
+        json plotJsonObject = plotsArray[indexPlots];
+        if(plotJsonObject.empty()) continue;
 
         ChartWidget * plot = new ChartWidget();
-        plot->setObjectName(plotJsonObject["id"].toString());
-        plot->setPlotTitle(plotJsonObject["title"].toString());
+        plot->setObjectName(plotJsonObject["id"].get<std::string>().c_str());
+        plot->setPlotTitle(plotJsonObject["title"].get<std::string>().c_str());
 
-        QJsonArray axesArray = plotJsonObject["axes"].toArray();
-        for (int indexAxes = 0; indexAxes < axesArray.size(); ++indexAxes) {
-            QJsonObject axesJsonObject = axesArray[indexAxes].toObject();
-            if(axesJsonObject.isEmpty()) continue;
+        json axesArray = plotJsonObject["axes"];
+        for (unsigned int indexAxes = 0; indexAxes < axesArray.size(); ++indexAxes) {
+            json axesJsonObject = axesArray[indexAxes];
+            if(axesJsonObject.empty()) continue;
             plot->addAxesFromJSON(axesJsonObject);
         }
 
-        QJsonArray graphArray = plotJsonObject["graphs"].toArray();
-        for (int indexGraph = 0; indexGraph < graphArray.size(); ++indexGraph) {
-            QJsonObject graphJsonObject = graphArray[indexGraph].toObject();
-            if(graphJsonObject.isEmpty()) continue;
+        json graphArray = plotJsonObject["graphs"];
+        for (unsigned int indexGraph = 0; indexGraph < graphArray.size(); ++indexGraph) {
+            json graphJsonObject = graphArray[indexGraph];
+            if(graphJsonObject.empty()) continue;
             plot->addSignalFromJSON(graphJsonObject);
         }
 
 
-        measurerTabs->addTab(plot, plotJsonObject["shortTitle"].toString());
+        measurerTabs->addTab(plot, plotJsonObject["shortTitle"].get<std::string>().c_str());
         connect(furnace,SIGNAL(AdcTerconDataSend(TerconData)),
                 plot,SLOT(addDataTercon(TerconData)));
 

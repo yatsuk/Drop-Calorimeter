@@ -2,12 +2,14 @@
 #define DEVICE_H
 
 #include <QObject>
-#include <QJsonObject>
+#include <include/externals/nlohmann/json/json.hpp>
 #include <QThread>
 #include <QVector>
 #include <QPair>
 #include "shared.h"
 #include "terconData.h"
+
+using json = nlohmann::json;
 
 class Device;
 
@@ -17,7 +19,7 @@ class DeviceManager: public QObject
 
 public:
     explicit DeviceManager(QObject *parent = 0);
-    Device * createDeviceFromJSON(const QJsonObject &parameters);
+    Device * createDeviceFromJSON(const json &parameters);
     ~DeviceManager();
 
 public slots:
@@ -39,11 +41,11 @@ public:
 signals:
     void message(const QString & msg, Shared::MessageLevel msgLevel);
     void dataSend(TerconData data);
-    void data (QJsonObject);
+    void data (json);
 
 public slots:
-    virtual bool setSetting(const QJsonObject &parameters){parameters_ = parameters;return true;}
-    virtual QJsonObject getSetting(){return parameters_;}
+    virtual bool setSetting(const json &parameters){parameters_ = parameters;return true;}
+    virtual json getSetting(){return parameters_;}
     virtual bool initialization(){return false;}
     virtual bool connectDevice(){return false;}
     virtual bool disconnectDevice(){return false;}
@@ -51,7 +53,7 @@ public slots:
     virtual bool stop(){return false;}
 
 protected:
-    QJsonObject parameters_;
+    json parameters_;
 };
 
 

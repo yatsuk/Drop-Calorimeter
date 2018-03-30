@@ -2,9 +2,11 @@
 #define CHARTWIDGET_H
 
 #include <QWidget>
-#include <QJsonObject>
-#include "qcustomplot.h"
+#include <include/externals/nlohmann/json/json.hpp>
+#include <include/externals/qcustomplot/qcustomplot.h>
 #include "src/terconData.h"
+
+using json = nlohmann::json;
 
 class AdvancedQCustomPlot : public QCustomPlot
 {
@@ -40,8 +42,8 @@ signals:
 
 public slots:
     void setPlotTitle(const QString & text);
-    void addSignalFromJSON (const QJsonObject & graphSetting);
-    void addAxesFromJSON (const QJsonObject & axesSetting);
+    void addSignalFromJSON (const json & graphSetting);
+    void addAxesFromJSON (const json & axesSetting);
     void addDataTercon(TerconData terconData);
 
 private slots:

@@ -94,14 +94,14 @@ void FurnaceSignalsView::setTemperature(TerconData terconData)
     }
 }
 
-void FurnaceSignalsView::updateState(const QJsonObject & json)
+void FurnaceSignalsView::updateState(const json &state)
 {
-    if (json["sender"].toString()== "regulator-main-heater"){
-        mainHeater->updateState(json);
-    } else if (json["sender"].toString()== "regulator-up-heater"){
-        upHeater->updateState(json);
-    } else if (json["sender"].toString()== "regulator-down-heater"){
-        downHeater->updateState(json);
+    if (QString::compare(state["sender"].get<std::string>().c_str(), "regulator-main-heater") == 0){
+        mainHeater->updateState(state);
+    } else if (QString::compare(state["sender"].get<std::string>().c_str(), "regulator-up-heater") == 0){
+        upHeater->updateState(state);
+    } else if (QString::compare(state["sender"].get<std::string>().c_str(), "regulator-down-heater") == 0){
+        downHeater->updateState(state);
     }
 }
 
@@ -202,43 +202,44 @@ void HeaterSignalsView::setTemperature(double temperature)
     temperatureLabel->setText(tr("%1%2С").arg(QString::number(temperature,'f',valuePresision_)).arg(QChar(176)));
 }
 
-void HeaterSignalsView::updateState(const QJsonObject & json)
+void HeaterSignalsView::updateState(const json &state)
 {
-    if (json["enable"].toBool()&& !json["emergency-stop"].toBool()){
+    if (state["enable"]&& !state["emergency-stop"]){
         statusHeaterLed->setOffColor1(defaultColorOn1LegIndicator);
         statusHeaterLed->setOffColor2(defaultColorOn2LegIndicator);
         heaterGroupBox->show();
         outPower->setText(tr("Выходная мощность: %1%")
-                          .arg(QString::number(json["out-power"].toDouble(),'f',1)));
+                          .arg(QString::number(state["out-power"],'f',1)));
         pLabel->setText(tr("P: %1%")
-                          .arg(QString::number(json["P*delta"].toDouble(),'f',1)));
+                        .arg(QString::number(state["P*delta"],'f',1)));
         iLabel->setText(tr("I: %1%")
-                          .arg(QString::number(json["I*delta"].toDouble(),'f',2)));
+                        .arg(QString::number(state["I*delta"],'f',2)));
         dLabel->setText(tr("D: %1%")
-                          .arg(QString::number(json["D*delta"].toDouble(),'f',1)));
-        QString mode = json["mode"].toString();
+                        .arg(QString::number(state["D*delta"],'f',1)));
+
+        QString mode = state["mode"].get<std::string>().c_str();
         if (mode=="automatic"){
             regulatorMode->setText(tr("Тип управления: автоматический"));
             setPoint->setText(tr("Уставка: %1%2С")
-                              .arg(QString::number(json["set-point"].toDouble(),'f',1)).arg(QChar(176)));
+                              .arg(QString::number(state["set-point"],'f',1)).arg(QChar(176)));
             setPoint->show();
-            changeColorDeltaTemperatureLabel(json["delta"].toDouble());
+            changeColorDeltaTemperatureLabel(state["delta"]);
             delta->show();
 
-            QJsonObject jsonTemperatureSegment = json["temperature-segment"].toObject();
-            QString segmentTitle = jsonTemperatureSegment["type"].toString();
+            json jsonTemperatureSegment = state["temperature-segment"];
+            QString segmentTitle = jsonTemperatureSegment["type"].get<std::string>().c_str();
             if (!segmentTitle.isEmpty()){
                 if (segmentTitle=="Изотерма"){
                     segmentInfoLabel->setText(segmentTitle);
                 } else {
                     segmentInfoLabel->setText(tr("%1 %2 К/мин")
                                               .arg(segmentTitle)
-                                              .arg(QString::number(jsonTemperatureSegment["velocity"].toDouble())));
+                                              .arg(QString::number(jsonTemperatureSegment["velocity"].get<double>())));
                 }
                 segmentInfoLabel->show();
 
-                durationTimeProgress = jsonTemperatureSegment["duration"].toDouble();
-                elapsedTimeProgress = jsonTemperatureSegment["elapsed-time"].toDouble();
+                durationTimeProgress = jsonTemperatureSegment["duration"];
+                elapsedTimeProgress = jsonTemperatureSegment["elapsed-time"];
                 progressBar->setMaximum(durationTimeProgress);
                 progressBar->setValue(elapsedTimeProgress);
                 setProgressBarText();
@@ -262,9 +263,9 @@ void HeaterSignalsView::updateState(const QJsonObject & json)
         } else if (mode=="stopCurrentTemperature"){
             regulatorMode->setText(tr("Тип управления: постоянная температура"));
             setPoint->setText(tr("Уставка: %1%2С")
-                              .arg(QString::number(json["set-point"].toDouble(),'f',1)).arg(QChar(176)));
+                              .arg(QString::number(state["set-point"],'f',1)).arg(QChar(176)));
             setPoint->show();
-            changeColorDeltaTemperatureLabel(json["delta"].toDouble());
+            changeColorDeltaTemperatureLabel(state["delta"]);
             delta->show();
             progressBar->hide();
             segmentInfoLabel->hide();
@@ -272,9 +273,9 @@ void HeaterSignalsView::updateState(const QJsonObject & json)
         } else if (mode=="constVelocity"){
             regulatorMode->setText(tr("Тип управления: постоянная скорость"));
             setPoint->setText(tr("Уставка: %1%2С")
-                              .arg(QString::number(json["set-point"].toDouble(),'f',1)).arg(QChar(176)));
+                              .arg(QString::number(state["set-point"],'f',1)).arg(QChar(176)));
             setPoint->show();
-            changeColorDeltaTemperatureLabel(json["delta"].toDouble());
+            changeColorDeltaTemperatureLabel(state["delta"]);
             delta->show();
             progressBar->hide();
             segmentInfoLabel->hide();
@@ -282,9 +283,9 @@ void HeaterSignalsView::updateState(const QJsonObject & json)
         } else if (mode=="constValue"){
             regulatorMode->setText(tr("Тип управления: постоянная разница"));
             setPoint->setText(tr("Уставка: %1%2С")
-                              .arg(QString::number(json["set-point"].toDouble(),'f',1)).arg(QChar(176)));
+                              .arg(QString::number(state["set-point"],'f',1)).arg(QChar(176)));
             setPoint->show();
-            changeColorDeltaTemperatureLabel(json["delta"].toDouble());
+            changeColorDeltaTemperatureLabel(state["delta"]);
             delta->show();
             progressBar->hide();
             segmentInfoLabel->hide();
@@ -294,7 +295,7 @@ void HeaterSignalsView::updateState(const QJsonObject & json)
         statusHeaterLed->setOffColor2(defaultColorOff2LegIndicator);
         heaterGroupBox->hide();
     }
-    if (json["emergency-stop"].toBool()){
+    if (state["emergency-stop"]){
         statusHeaterLed->setOffColor1(Qt::red);
         statusHeaterLed->setOffColor2(Qt::red);
         heaterGroupBox->hide();
@@ -437,10 +438,10 @@ void CalorimeterSignalsView::setValue(TerconData terconData)
     }
 }
 
-void CalorimeterSignalsView::updateState(const QJsonObject & json)
+void CalorimeterSignalsView::updateState(const json &state)
 {
-    if (json["sender"].toString()== "regulator-thermostat"){
-        thermostatHeater->updateState(json);
+    if (QString::compare(state["sender"].get<std::string>().c_str(), "regulator-thermostat") == 0){
+        thermostatHeater->updateState(state);
     }
 }
 

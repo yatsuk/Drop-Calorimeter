@@ -8,11 +8,13 @@
 #include <QString>
 #include <QVector>
 #include <QVBoxLayout>
-#include <QJsonObject>
-#include "src/GUI/qledindicator.h"
+#include <include/externals/nlohmann/json/json.hpp>
+#include <include/externals/qledindicator/qledindicator.h>
 #include "src/terconData.h"
 #include "widgetRegulatorFurnace.h"
 #include "additionalHeatersWidget.h"
+
+using json = nlohmann::json;
 
 class HeaterSignalsView;
 
@@ -23,7 +25,7 @@ public:
     explicit FurnaceSignalsView(QWidget *parent = 0);
 
 public slots:
-    void updateState(const QJsonObject & json);
+    void updateState(const json & state);
     void setTemperature(TerconData terconData);
 
 private slots:
@@ -49,7 +51,7 @@ public:
     explicit CalorimeterSignalsView(QWidget *parent = 0);
 
 public slots:
-    void updateState(const QJsonObject & json);
+    void updateState(const json & state);
     void setValue(TerconData terconData);
 
 public slots:
@@ -71,7 +73,7 @@ public:
     explicit HeaterSignalsView(const QString & heaterName, QWidget *parent = 0);
 
 public slots:
-    void updateState(const QJsonObject & json);
+    void updateState(const json & state);
     void setTemperature(double temperature);
     void setValuePresision(int valuePresision) {valuePresision_ = valuePresision;}
 

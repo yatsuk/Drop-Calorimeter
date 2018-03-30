@@ -1,6 +1,5 @@
 ﻿#include "tercon.h"
 #include <QDebug>
-#include <QJsonObject>
 
 Tercon::Tercon()
 {
@@ -21,12 +20,12 @@ bool Tercon::initialization()
     return true;
 }
 
-bool Tercon::setSetting(const QJsonObject &parameters)
+bool Tercon::setSetting(const json &parameters)
 {
     Device::setSetting(parameters);
-    channelArray = parameters["channels"].toArray();
+    channelArray = parameters["channels"];
     if (port){
-        port->setPortName(parameters["connectionSettings"].toObject()["portName"].toString());
+        port->setPortName(parameters["connectionSettings"]["portName"].get<std::string>().c_str());
         return true;
     }
     return false;
@@ -103,10 +102,10 @@ void Tercon::convertData(QByteArray strData){
     }
 
     for (int i = 0; i < channelArray.size(); ++i){
-        QJsonObject channel = channelArray[i].toObject();
-        if (channel["channelNumber"].toInt() == channelNumber){
-            data.id = channel["id"].toString();
-            data.unit = channel["unit"].toString();
+        json channel = channelArray[i];
+        if (channel["channelNumber"] == channelNumber){
+            data.id = channel["id"].get<std::string>().c_str();
+            data.unit = channel["unit"].get<std::string>().c_str();
             emit dataSend(data);
             break;
         }

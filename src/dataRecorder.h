@@ -2,13 +2,14 @@
 #define DATARECORDER_H
 
 #include <QObject>
-#include <QJsonObject>
-#include <QJsonArray>
+#include <include/externals/nlohmann/json/json.hpp>
 #include <QVector>
 #include <QFile>
 #include <QFileInfo>
 #include "terconData.h"
 #include "shared.h"
+
+using json = nlohmann::json;
 
 class ColumnInfo;
 
@@ -23,16 +24,16 @@ signals:
     void message(const QString & msg, Shared::MessageLevel msgLevel);
 
 public slots:
-    virtual void setSetting(const QJsonObject &parameters){parameters_ = parameters;}
-    virtual QJsonObject getSetting(){return parameters_;}
+    virtual void setSetting(const json &parameters){parameters_ = parameters;}
+    virtual json getSetting(){return parameters_;}
     virtual void startRecordExperiment(int){}
     virtual void stopRecordExperiment(){}
-    static  DataRecorder * createDataRecorderFromJSON(const QJsonObject &parameters);
+    static  DataRecorder * createDataRecorderFromJSON(const json &parameters);
     virtual void addData(TerconData){}
     virtual void writeLine(const QString &){}
 
 protected:
-    QJsonObject parameters_;
+    json parameters_;
 };
 
 
@@ -41,7 +42,7 @@ class FileRecorder : public DataRecorder
 public:
     FileRecorder();
     ~FileRecorder();
-    void setSetting(const QJsonObject &parameters);
+    void setSetting(const json &parameters);
     void addData(TerconData data);
     void writeLine(const QString & str);
     void startRecordExperiment(int count);
