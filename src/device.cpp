@@ -20,7 +20,7 @@ Device * DeviceManager::createDeviceFromJSON(const json &parameters)
     QThread * deviceThread = 0;
 
     if (!parameters.empty()){
-        if (parameters["type"].get<std::string>().c_str()=="Tercon"){
+        if (QString::compare(parameters["type"].get<std::string>().c_str(), "Tercon") == 0){
             deviceThread = new QThread;
             device = new Tercon;
 

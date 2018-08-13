@@ -70,19 +70,19 @@ void ChartWidget::addSignalFromJSON (const json & graphSetting)
 
 void ChartWidget::addAxesFromJSON (const json &axesSetting)
 {
-    if (axesSetting["orientation"].get<std::string>().c_str() == "left"){
+    if (QString::compare(axesSetting["orientation"].get<std::string>().c_str(), "left") == 0){
         plot->yAxis->setObjectName(axesSetting["id"].get<std::string>().c_str());
         plot->yAxis->setLabel(axesSetting["title"].get<std::string>().c_str());
         plot->yAxis2->setVisible(true);
         plot->yAxis2->setTickLabels(false);
         plot->yAxis->setNumberFormat("f");
         plot->yAxis->setNumberPrecision(0);
-    } else if (axesSetting["orientation"].get<std::string>().c_str() == "bottom"){
+    } else if (QString::compare(axesSetting["orientation"].get<std::string>().c_str(),  "bottom") == 0){
         plot->xAxis->setObjectName(axesSetting["id"].get<std::string>().c_str());
         plot->xAxis->setLabel(axesSetting["title"].get<std::string>().c_str());
         plot->xAxis2->setVisible(true);
         plot->xAxis2->setTickLabels(false);
-    } else if (axesSetting["orientation"].get<std::string>().c_str() == "right"){
+    } else if (QString::compare(axesSetting["orientation"].get<std::string>().c_str(),  "right") == 0){
         plot->yAxis2->setObjectName(axesSetting["id"].get<std::string>().c_str());
         plot->yAxis2->setLabel(axesSetting["title"].get<std::string>().c_str());
         plot->xAxis2->setVisible(true);

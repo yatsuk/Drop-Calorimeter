@@ -8,7 +8,6 @@
 #include "src/shared.h"
 #include "automaticRegulatorWidget.h"
 #include "manualRegulatorWidget.h"
-#include "progPowerRegulatorWidget.h"
 #include "diagnosticwidget.h"
 #include "dialogParametersRegulator.h"
 #include "src/regulator.h"
@@ -35,7 +34,6 @@ public slots:
 private slots:
     void setRegulatorModeAutomatic();
     void setRegulatorModeManual();
-    void setRegulatorModeProgPower();
     void startRegulatorClicked();
     void emergencyStopClicked();
     void settingsRegulatorButtonClicked();
@@ -55,7 +53,6 @@ private:
 
     AutomaticRegulatorWidget * autoRegulatorWidget;
     ManualRegulatorWidget * manualRegulatorWidget;
-    ProgPowerRegulatorWidget * progPowerRegulatorWidget;
 
     QColor defaultColorOn1LegIndicator;
     QColor defaultColorOn2LegIndicator;

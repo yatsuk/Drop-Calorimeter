@@ -226,26 +226,27 @@ void HeaterSignalsView::updateState(const json &state)
             changeColorDeltaTemperatureLabel(state["delta"]);
             delta->show();
 
-            json jsonTemperatureSegment = state["temperature-segment"];
-            QString segmentTitle = jsonTemperatureSegment["type"].get<std::string>().c_str();
-            if (!segmentTitle.isEmpty()){
-                if (segmentTitle=="Изотерма"){
-                    segmentInfoLabel->setText(segmentTitle);
-                } else {
-                    segmentInfoLabel->setText(tr("%1 %2 К/мин")
-                                              .arg(segmentTitle)
-                                              .arg(QString::number(jsonTemperatureSegment["velocity"].get<double>())));
+            if (!state["temperature-segment"].is_null()){
+                json jsonTemperatureSegment = state["temperature-segment"];
+                QString segmentTitle = jsonTemperatureSegment["type"].get<std::string>().c_str();
+                if (!segmentTitle.isEmpty()){
+                    if (segmentTitle=="Изотерма"){
+                        segmentInfoLabel->setText(segmentTitle);
+                    } else {
+                        segmentInfoLabel->setText(tr("%1 %2 К/мин")
+                                                  .arg(segmentTitle)
+                                                  .arg(QString::number(jsonTemperatureSegment["velocity"].get<double>())));
+                    }
+                    segmentInfoLabel->show();
+
+                    durationTimeProgress = jsonTemperatureSegment["duration"];
+                    elapsedTimeProgress = jsonTemperatureSegment["elapsed-time"];
+                    progressBar->setMaximum(durationTimeProgress);
+                    progressBar->setValue(elapsedTimeProgress);
+                    setProgressBarText();
+                    progressBar->show();
                 }
-                segmentInfoLabel->show();
-
-                durationTimeProgress = jsonTemperatureSegment["duration"];
-                elapsedTimeProgress = jsonTemperatureSegment["elapsed-time"];
-                progressBar->setMaximum(durationTimeProgress);
-                progressBar->setValue(elapsedTimeProgress);
-                setProgressBarText();
-                progressBar->show();
             }
-
         } else if (mode=="manual"){
             regulatorMode->setText(tr("Тип управления: ручной"));
             setPoint->hide();

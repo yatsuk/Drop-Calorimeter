@@ -35,7 +35,7 @@ Filter * Filter::createFilterFromJSON(const json &parameters)
 void Filter::addData(TerconData data)
 {
     json settings = parameters_["settings"];
-    if (settings["sourceId"].get<std::string>().c_str() ==data.id){
+    if (QString::compare(settings["sourceId"].get<std::string>().c_str(), data.id) == 0){
         TerconData newData;
         newData.id = settings["newId"].get<std::string>().c_str();
         newData.time = data.time;

@@ -40,7 +40,6 @@ SOURCES += src/main.cpp\
     src/GUI/logView.cpp \
     src/GUI/mainwindow.cpp \
     src/GUI/manualRegulatorWidget.cpp \
-    src/GUI/progPowerRegulatorWidget.cpp \
     src/GUI/signalsView.cpp \
     src/GUI/widgetRegulatorFurnace.cpp \
     src/device.cpp \
@@ -81,7 +80,6 @@ HEADERS  += src/shared.h \
     src/GUI/logView.h \
     src/GUI/mainwindow.h \
     src/GUI/manualRegulatorWidget.h \
-    src/GUI/progPowerRegulatorWidget.h \
     src/GUI/signalsView.h \
     src/GUI/widgetRegulatorFurnace.h \
     src/device.h \

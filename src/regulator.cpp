@@ -1,6 +1,5 @@
 #include "regulator.h"
 #include "temperatureSegment.h"
-#include <QPolygonF>
 #include <QDebug>
 
 
@@ -28,9 +27,18 @@ Regulator::Regulator(QObject *parent) :
     velocity_ = 0;
     constVelocitySegment_ = 0;
 
-    state_["out-power"]=0;
+    state_["out-power"]=double(0);
     state_["mode"]="manual";
     state_["enable"]=false;
+    state_["value"]=double(0);
+    state_["delta"]=double(0);
+    state_["P*delta"]=double(0);
+    state_["I*delta"]=double(0);
+    state_["D*delta"]=double(0);
+    state_["emergency-stop"]=false;
+    state_["set-point"]=double(0);
+    state_["sender"]="";
+    state_["temperature-segment"]=json();
     prepareAndSendState();
 }
 
@@ -70,16 +78,6 @@ void Regulator::progTimerTimeout(){
         state_["out-power"]=power;
         prepareAndSendState();
     }
-}
-
-double Regulator::computePowerProg(double temperature){
-    /*QPolygonF polygon;
-    polygon << QPointF(450,10)<< QPointF(790,15)<< QPointF(1060,20)<< QPointF(1240,25)
-            << QPointF(1400,30)<< QPointF(1520,35)<< QPointF(1600,37.5);
-    QwtSpline spline;
-    spline.setPoints(polygon);
-    return spline.value(temperature);*/
-    return 0;
 }
 
 void Regulator::calculatePower(double value){  
@@ -155,20 +153,6 @@ void Regulator::setValueADC(double value){
         firstValue = false;
         return;
     }
-    else if(firstValue&&regulatorOn&&mode==Shared::programPower){
-        initialTemperature_ = value;
-        progPowerTimer->start(1000);
-        power = computePowerProg(initialTemperature_);
-        incPower_= (computePowerProg(temperatureProg_)-computePowerProg(initialTemperature_))/duration_/60;
-
-        if (temperatureProg_>initialTemperature_)
-            progPowerHeat_=true;
-        else
-            progPowerHeat_ = false;
-
-        firstValue = false;
-        return;
-    }
     else if (firstValue&&regulatorOn&&mode==Shared::constVelocity){
         startAutoRegulatorTime.restart();
         delete constVelocitySegment_;
@@ -222,12 +206,6 @@ void Regulator::setValueADC(double value){
 
         else if (mode==Shared::stopCurrentTemperature){
             calculatePower(value);
-        }
-        else if (mode==Shared::programPower){
-            if (value>temperatureProg_&&progPowerHeat_)
-                progPowerTimer->stop();
-            else if (value<temperatureProg_&&!progPowerHeat_)
-                progPowerTimer->stop();
         }
         else if (mode==Shared::constVelocity){
             if (velocity_!=0){
@@ -375,8 +353,6 @@ QString Regulator::convertModeToString(Shared::RegulatorMode regulatorMode)
         return "automatic";
     } else if (regulatorMode==Shared::manual) {
         return "manual";
-    } else if (regulatorMode==Shared::programPower) {
-        return "programPower";
     } else if (regulatorMode==Shared::stopCurrentTemperature) {
         return "stopCurrentTemperature";
     } else if (regulatorMode==Shared::constVelocity) {

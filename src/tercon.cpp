@@ -22,6 +22,8 @@ bool Tercon::initialization()
 
 bool Tercon::setSetting(const json &parameters)
 {
+    std::string str(parameters.dump(4));
+    qDebug() << str.c_str();
     Device::setSetting(parameters);
     channelArray = parameters["channels"];
     if (port){
@@ -101,7 +103,7 @@ void Tercon::convertData(QByteArray strData){
         return;
     }
 
-    for (int i = 0; i < channelArray.size(); ++i){
+    for (unsigned int i = 0; i < channelArray.size(); ++i){
         json channel = channelArray[i];
         if (channel["channelNumber"] == channelNumber){
             data.id = channel["id"].get<std::string>().c_str();

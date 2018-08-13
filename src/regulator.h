@@ -68,7 +68,6 @@ private:
     int currentSegment;
     double currentValueADC;
 
-    double computePowerProg(double temperature);
     bool isEndSegment(double currentTemperature,int segmentNumber);
     void clearRegulator();
     QString convertModeToString(Shared::RegulatorMode regulatorMode);

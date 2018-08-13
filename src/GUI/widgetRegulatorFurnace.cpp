@@ -18,9 +18,6 @@ WidgetRegulatorFurnace::WidgetRegulatorFurnace(QWidget *parent) :
     manualRegulatorWidget = new ManualRegulatorWidget();
     manualRegulatorWidget->setEnabledWidget(true);
 
-    progPowerRegulatorWidget = new ProgPowerRegulatorWidget();
-    progPowerRegulatorWidget->setEnabledWidget(false);
-
     diagnosticWidget = new DiagnosticWidget();
 
 
@@ -56,7 +53,6 @@ WidgetRegulatorFurnace::WidgetRegulatorFurnace(QWidget *parent) :
     vLayout->addLayout(outPowerAndSettingsLayout);
     vLayout->addWidget(autoRegulatorWidget);
     vLayout->addWidget(manualRegulatorWidget);
-    vLayout->addWidget(progPowerRegulatorWidget);
     vLayout->addWidget(diagnosticWidget);
     vLayout->addStretch(1);
 
@@ -70,11 +66,9 @@ WidgetRegulatorFurnace::WidgetRegulatorFurnace(QWidget *parent) :
     connect (autoRegulatorWidget,SIGNAL(regCurrentTemperature(bool)),this,SLOT(regCurrentTemperature(bool)));
 
     connect (manualRegulatorWidget,SIGNAL(manualRegulatorEnabled()),this,SLOT(setRegulatorModeManual()));
-    connect (progPowerRegulatorWidget,SIGNAL(progPowerRegulatorEnabled()),this,SLOT(setRegulatorModeProgPower()));
 
     connect (startStopButton,SIGNAL(toggled(bool)),autoRegulatorWidget,SLOT(setRegulatorOn(bool)));
     connect (startStopButton,SIGNAL(toggled(bool)),manualRegulatorWidget,SLOT(setRegulatorOn(bool)));
-    connect (startStopButton,SIGNAL(toggled(bool)),progPowerRegulatorWidget,SLOT(setRegulatorOn(bool)));
     connect(settingRegulatorButton,SIGNAL(clicked()),this,SLOT(settingsRegulatorButtonClicked()));
 
     diagnosticWidget->hide();
@@ -103,9 +97,6 @@ void WidgetRegulatorFurnace::setRegulator(Regulator *regulator){
     connect(regulatorOfFurnace,SIGNAL(emergencyStopRegulator()),this,SLOT(emergencyStop()));
     connect(regulatorOfFurnace,SIGNAL(stopRegulator()),this,SLOT(offRegulator()));
 
-    connect(progPowerRegulatorWidget,SIGNAL(temperature(double)),regulatorOfFurnace,SLOT(setTemperatureProgMode(double)));
-    connect(progPowerRegulatorWidget,SIGNAL(duration(double)),regulatorOfFurnace,SLOT(setDurationProgMode(double)));
-
     connect(dialogParametersRegulator,SIGNAL(parameters(RegulatorParameters)),
             regulatorOfFurnace,SLOT(setParameters(RegulatorParameters)));
 }
@@ -123,7 +114,6 @@ void WidgetRegulatorFurnace::regCurrentTemperature(bool enable){
 
 void WidgetRegulatorFurnace::setRegulatorModeAutomatic(){ 
     manualRegulatorWidget->setEnabledWidget(false);
-    progPowerRegulatorWidget->setEnabledWidget(false);
     emit message(tr("Регулятор печи переведен в автоматический режим управления."),Shared::information);
     emit regulatorModeChange(Shared::automatic);
 }
@@ -131,16 +121,8 @@ void WidgetRegulatorFurnace::setRegulatorModeAutomatic(){
 void WidgetRegulatorFurnace::setRegulatorModeManual(){
     autoRegulatorWidget->setEnabledWidget(false);
     //manualRegulatorWidget->setEnabledWidget(true);
-    progPowerRegulatorWidget->setEnabledWidget(false);
     emit message(tr("Регулятор печи переведен в ручной режим управления."),Shared::information);
     emit regulatorModeChange(Shared::manual);
-}
-
-void WidgetRegulatorFurnace::setRegulatorModeProgPower(){
-    autoRegulatorWidget->setEnabledWidget(false);
-    manualRegulatorWidget->setEnabledWidget(false);
-    emit message(tr("Регулятор печи переведен в режим программируемой мощности."),Shared::information);
-    emit regulatorModeChange(Shared::programPower);
 }
 
 void WidgetRegulatorFurnace::startRegulatorClicked(){
@@ -221,5 +203,4 @@ void WidgetRegulatorFurnace::offRegulator(){
     statusLed->setOffColor2(defaultColorOff2LegIndicator);
     emergencyStopButton->setEnabled(false);
     autoRegulatorWidget->setEnabledWidget(false);
-    progPowerRegulatorWidget->setEnabledWidget(false);
 }
