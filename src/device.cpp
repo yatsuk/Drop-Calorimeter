@@ -1,5 +1,6 @@
 #include "device.h"
 #include "tercon.h"
+#include "mit_8_20.h"
 #include <QTime>
 #include <QDebug>
 
@@ -16,13 +17,27 @@ DeviceManager::~DeviceManager()
 
 Device * DeviceManager::createDeviceFromJSON(const json &parameters)
 {
-    Device * device = 0;
-    QThread * deviceThread = 0;
+    Device * device = nullptr;
+    QThread * deviceThread = nullptr;
 
     if (!parameters.empty()){
         if (QString::compare(parameters["type"].get<std::string>().c_str(), "Tercon") == 0){
             deviceThread = new QThread;
             device = new Tercon;
+
+            device->moveToThread(deviceThread);
+            deviceThread->start(QThread::HighPriority);
+
+            if(!device->initialization()){
+                qDebug() << "initialization fail";
+            }
+            device->setObjectName(parameters["id"].get<std::string>().c_str());
+            if(!device->setSetting(parameters)){
+                qDebug() << "set settings fail";
+            }
+        } else if(QString::compare(parameters["type"].get<std::string>().c_str(), "Mit_8_20") == 0){
+            deviceThread = new QThread;
+            device = new Mit_8_20;
 
             device->moveToThread(deviceThread);
             deviceThread->start(QThread::HighPriority);

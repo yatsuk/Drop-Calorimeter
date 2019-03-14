@@ -10,7 +10,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets serialport printsupport opengl
 TARGET = Drop-Calorimeter
 TEMPLATE = app
 CONFIG += c++14
-
+QMAKE_LFLAGS += -no-pie
 SOURCES += src/main.cpp\
     src/temperatureSegment.cpp \
     src/segments.cpp \
@@ -47,7 +47,8 @@ SOURCES += src/main.cpp\
     src/data_manager.cpp \
     src/agilent.cpp \
     include/externals/qcustomplot/qcustomplot.cpp \
-    include/externals/qledindicator/qledindicator.cpp
+    include/externals/qledindicator/qledindicator.cpp \
+    src/mit_8_20.cpp
 
 HEADERS  += src/shared.h \
     src/parameters.h \
@@ -88,7 +89,8 @@ HEADERS  += src/shared.h \
     src/agilent.h \
     include/externals/nlohmann/json/json.hpp \
     include/externals/qledindicator/qledindicator.h \
-    include/externals/qcustomplot/qcustomplot.h
+    include/externals/qcustomplot/qcustomplot.h \
+    src/mit_8_20.h
 
 
 win32 {
