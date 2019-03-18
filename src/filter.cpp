@@ -15,14 +15,12 @@ Filter::~Filter()
 
 Filter * Filter::createFilterFromJSON(const json &parameters)
 {
-    Filter * filter = 0;
+    Filter * filter = nullptr;
     if (!parameters.empty()){
         if (parameters["type"].get<std::string>()=="Thermocouple"){
             filter = new TermocoupleConverter;
         } else if (parameters["type"].get<std::string>()=="MA"){
             filter = new MovingAverage;
-        } else if (parameters["type"].get<std::string>()=="BlowoutRemover"){
-            filter = new BlowoutRemover;
         }
         if (filter){
             filter->setObjectName(parameters["id"].get<std::string>().c_str());
@@ -91,43 +89,6 @@ double MovingAverage::emaValue(TerconData newValue)
     lastEmaValue = ema;
     return ema;
 }
-
-
-
-
-
-
-double BlowoutRemover::receive(TerconData data, bool * ok)
-{
-    /*if (type==Exponential){
-        if(ok)*ok=true;
-        return emaValue(data);
-    }
-    if(ok)*ok=false;*/
-    return 0;
-}
-
-void BlowoutRemover::setSetting(const json &parameters)
-{
-    movingAverage.setSetting(parameters);
-    /*json averageSettings = parameters["settings"];
-    type = Undef;
-    averageCount = 1;
-    if (averageSettings["type"].get<std::string>().c_str()=="exponential"){
-        type = Exponential;
-        averageCount = averageSettings["averageCount"];
-        alpha = 2.0 / (averageCount + 1.0);
-    }
-
-    parameters_ = parameters;
-    firstValue_ = true;*/
-    parameters_ = parameters;
-}
-
-
-
-
-
 
 
 

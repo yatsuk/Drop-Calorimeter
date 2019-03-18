@@ -50,21 +50,6 @@ private:
     bool firstValue_;
 };
 
-class BlowoutRemover: public Filter
-{
-public:
-    void setSetting(const json &parameters);
-
-protected:
-    virtual double receive(TerconData data, bool * ok = 0);
-
-private:
-    MovingAverage movingAverage;
-
-};
-
-
-
 class TermocoupleConverter: public Filter
 {
 
