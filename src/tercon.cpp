@@ -22,8 +22,6 @@ bool Tercon::initialization()
 
 bool Tercon::setSetting(const json &parameters)
 {
-    std::string str(parameters.dump(4));
-    qDebug() << str.c_str();
     Device::setSetting(parameters);
     channelArray = parameters["channels"];
     if (port){

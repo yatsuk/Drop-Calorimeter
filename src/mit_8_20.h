@@ -1,5 +1,5 @@
-#ifndef TERCON_H
-#define TERCON_H
+#ifndef MIT_8_20_H
+#define MIT_8_20_H
 
 #include <QObject>
 #include <QSerialPort>
@@ -10,12 +10,12 @@
 
 using json = nlohmann::json;
 
-class Tercon : public Device
+class Mit_8_20 : public Device
 {
     Q_OBJECT
 public:
-    Tercon();
-    ~Tercon();
+    Mit_8_20();
+    ~Mit_8_20();
 
 public slots:
     bool initialization();
@@ -36,4 +36,4 @@ private:
     json channelArray;
 };
 
-#endif // TERCON_H
+#endif // MIT_8_20_H

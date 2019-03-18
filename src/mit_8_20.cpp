@@ -1,29 +1,27 @@
-﻿#include "tercon.h"
+﻿#include "mit_8_20.h"
 #include <QDebug>
 
-Tercon::Tercon()
+Mit_8_20::Mit_8_20()
 {
-    port = 0;
+    port = nullptr;
 }
 
-Tercon::~Tercon()
+Mit_8_20::~Mit_8_20()
 {
     if (port)
         delete port;
 }
 
-bool Tercon::initialization()
+bool Mit_8_20::initialization()
 {
     port = new QSerialPort;
-    connect(port, &QSerialPort::readyRead, this, &Tercon::readData);
+    connect(port, &QSerialPort::readyRead, this, &Mit_8_20::readData);
 
     return true;
 }
 
-bool Tercon::setSetting(const json &parameters)
+bool Mit_8_20::setSetting(const json &parameters)
 {
-    std::string str(parameters.dump(4));
-    qDebug() << str.c_str();
     Device::setSetting(parameters);
     channelArray = parameters["channels"];
     if (port){
@@ -33,17 +31,17 @@ bool Tercon::setSetting(const json &parameters)
     return false;
 }
 
-bool Tercon::start()
+bool Mit_8_20::start()
 {
     return true;
 }
 
-bool Tercon::stop()
+bool Mit_8_20::stop()
 {
     return true;
 }
 
-bool Tercon::connectDevice()
+bool Mit_8_20::connectDevice()
 {
     if(!port || port->portName().isEmpty())
         return false;
@@ -59,7 +57,7 @@ bool Tercon::connectDevice()
     return true;
 }
 
-bool Tercon::disconnectDevice()
+bool Mit_8_20::disconnectDevice()
 {
     if (port && port->isOpen()){
         port->close();
@@ -69,36 +67,24 @@ bool Tercon::disconnectDevice()
     return false;
 }
 
-void Tercon::convertData(QByteArray strData){
+void Mit_8_20::convertData(QByteArray strData){
     bool convertIsOK=false;
 
     strData = strData.simplified();
-    QString tempStr = strData;
-    int indexSeparator = tempStr.indexOf(QRegExp("[tRU]"));
-    QString unitAndNumberData = tempStr.left(indexSeparator+1);
-    tempStr.remove(0,indexSeparator+1);
-    if(indexSeparator==-1){
-        emit message(tr("Ошибка чтения данных Теркона\n"
-                        "(разделитель не обнаружен): ")+strData+".",Shared::warning);
-        return;
-    }
+    QString valueStr = strData.mid(2);
+    valueStr.chop(1);
 
     TerconData data;
-    data.value = tempStr.toDouble(&convertIsOK);
+    data.value = valueStr.toDouble(&convertIsOK);
     if (!convertIsOK){
-        emit message(tr("Ошибка чтения данных Теркона\n"
+        emit message(tr("Ошибка чтения данных МИТ8.20\n"
                         "(невозможно преобразовать строку в число): ")+strData+".",Shared::warning);
         return;
     }
 
-    if (unitAndNumberData.at((unitAndNumberData.size() - 1)) == 'U'){
-        data.value /= 1000;
-    }
-
-    unitAndNumberData.chop(1);
-    int channelNumber = unitAndNumberData.toInt(&convertIsOK);
+    int channelNumber = strData.left(1).toInt(&convertIsOK);
     if (!convertIsOK){
-        emit message(tr("Ошибка чтения данных Теркона\n"
+        emit message(tr("Ошибка чтения данных МИТ8.20\n"
                         "(неверный номер канала): ")+strData+".",Shared::warning);
         return;
     }
@@ -114,8 +100,8 @@ void Tercon::convertData(QByteArray strData){
     }
 }
 
-void Tercon::extractData(){
-    QList <QByteArray> splitByteArray(recvBytes.split('\r'));
+void Mit_8_20::extractData(){
+    QList <QByteArray> splitByteArray(recvBytes.split(' '));
     for(int i =0;i <splitByteArray.size()-1;++i){
         convertData(splitByteArray.at(i));
     }
@@ -123,7 +109,7 @@ void Tercon::extractData(){
     recvBytes.append(splitByteArray.last());
 }
 
-void Tercon::readData(){
+void Mit_8_20::readData(){
     recvBytes.append(port->readAll());
     extractData();
 }
