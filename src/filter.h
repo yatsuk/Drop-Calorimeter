@@ -58,7 +58,8 @@ public:
     void setSetting(const json &parameters);
 
 protected:
-    virtual double receive(TerconData data, bool * ok = 0);
+    virtual double receive(TerconData data, bool * ok = nullptr);
+    virtual void emitData(TerconData data);
 
 private:
     enum Type {A1, S, Undef};
@@ -70,6 +71,9 @@ private:
 
     double voltageToTemperatureTypeS (double voltage);
     double temperatureToVoltageTypeS (double temperature);
+
+    bool isConstColdTemperature;
+    bool isSetColdVoltage = false;
 };
 
 class ResistanceThermometerConverter: public Filter

@@ -119,15 +119,51 @@ void TermocoupleConverter::setSetting(const json &parameters)
     json thermocoupleSettings = parameters["settings"];
     type = Undef;
     coldVoltage = 0;
+    isConstColdTemperature = thermocoupleSettings["coldTemperature"].is_number();
     if (thermocoupleSettings["type"].get<std::string>()=="S"){
         type = S;
-        coldVoltage = temperatureToVoltageTypeS(thermocoupleSettings["coldTemperature"]);
+        if (isConstColdTemperature){
+            coldVoltage = temperatureToVoltageTypeS(thermocoupleSettings["coldTemperature"]);
+        }
     } else if (thermocoupleSettings["type"].get<std::string>()=="A1"){
         type = A1;
-        coldVoltage = temperatureToVoltageTypeA1(thermocoupleSettings["coldTemperature"]);
+        if (isConstColdTemperature){
+            coldVoltage = temperatureToVoltageTypeA1(thermocoupleSettings["coldTemperature"]);
+        }
     }
 
     parameters_ = parameters;
+}
+
+void TermocoupleConverter::emitData(TerconData data)
+{
+    if(!isConstColdTemperature){
+        if(QString::compare(parameters_["settings"]["coldTemperature"].get<std::string>().c_str(), data.id) == 0){
+            if (type==S){
+                coldVoltage = temperatureToVoltageTypeS(data.value);
+                isSetColdVoltage = true;
+            } else if (type==A1){
+                coldVoltage = temperatureToVoltageTypeA1(data.value);
+                isSetColdVoltage = true;
+            }
+            return;
+        }
+    }
+
+    if(!isSetColdVoltage && !isConstColdTemperature)return;
+
+
+    json settings = parameters_["settings"];
+    TerconData newData;
+    newData.id = settings["newId"].get<std::string>().c_str();
+    newData.time = data.time;
+    bool ok;
+    newData.value = receive(data, &ok);
+    if(!ok)
+        return;
+
+    newData.unit = settings["unit"].get<std::string>().c_str();
+    emit dataSend(newData);
 }
 
 double TermocoupleConverter::voltageToTemperatureTypeA1 (double voltage)
