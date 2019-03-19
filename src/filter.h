@@ -22,6 +22,7 @@ signals:
 
 public slots:
     virtual void setSetting(const json &parameters){parameters_ = parameters;}
+    virtual void emitData(TerconData data);
     virtual json getSetting(){return parameters_;}
     static  Filter * createFilterFromJSON(const json &parameters);
     void addData(TerconData data);
@@ -69,6 +70,22 @@ private:
 
     double voltageToTemperatureTypeS (double voltage);
     double temperatureToVoltageTypeS (double temperature);
+};
+
+class ResistanceThermometerConverter: public Filter
+{
+
+public:
+    void setSetting(const json &parameters);
+
+protected:
+    virtual double receive(TerconData data, bool * ok = nullptr);
+
+private:
+    enum Type {Pt100, Undef};
+    Type type;
+
+    double resistanceToTemperaturePt100 (double resistance);
 };
 
 #endif // FILTER_H

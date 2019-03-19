@@ -21,7 +21,10 @@ Filter * Filter::createFilterFromJSON(const json &parameters)
             filter = new TermocoupleConverter;
         } else if (parameters["type"].get<std::string>()=="MA"){
             filter = new MovingAverage;
+        } else if (parameters["type"].get<std::string>()=="ResistanceThermometer"){
+            filter = new ResistanceThermometerConverter;
         }
+
         if (filter){
             filter->setObjectName(parameters["id"].get<std::string>().c_str());
             filter->setSetting(parameters);
@@ -34,17 +37,23 @@ void Filter::addData(TerconData data)
 {
     json settings = parameters_["settings"];
     if (QString::compare(settings["sourceId"].get<std::string>().c_str(), data.id) == 0){
-        TerconData newData;
-        newData.id = settings["newId"].get<std::string>().c_str();
-        newData.time = data.time;
-        bool ok;
-        newData.value = receive(data, &ok);
-        if(!ok)
-            return;
-
-        newData.unit = settings["unit"].get<std::string>().c_str();
-        emit dataSend(newData);
+        emitData(data);
     }
+}
+
+void Filter::emitData(TerconData data)
+{
+    json settings = parameters_["settings"];
+    TerconData newData;
+    newData.id = settings["newId"].get<std::string>().c_str();
+    newData.time = data.time;
+    bool ok;
+    newData.value = receive(data, &ok);
+    if(!ok)
+        return;
+
+    newData.unit = settings["unit"].get<std::string>().c_str();
+    emit dataSend(newData);
 }
 
 
@@ -216,4 +225,34 @@ double TermocoupleConverter::temperatureToVoltageTypeS (double temperature)
         voltage-=9.43223690612E-18*pow(temperature,4);
     }
     return voltage*1e-3;
+}
+
+
+
+
+double ResistanceThermometerConverter::receive(TerconData data, bool * ok)
+{
+    if (type==Pt100){
+        if(ok)*ok=true;
+        return resistanceToTemperaturePt100(data.value);
+    }
+    if(ok)*ok=false;
+    return 0;
+}
+
+void ResistanceThermometerConverter::setSetting(const json &parameters)
+{
+    json thermometerSettings = parameters["settings"];
+    type = Undef;
+    if (thermometerSettings["type"].get<std::string>()=="Pt100"){
+        type = Pt100;
+    }
+    parameters_ = parameters;
+}
+
+double ResistanceThermometerConverter::resistanceToTemperaturePt100 (double resistance)
+{
+    double temperature=-308.27598
+            + 3.01975*resistance;
+    return temperature;
 }
