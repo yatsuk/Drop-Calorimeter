@@ -18,15 +18,10 @@ DeviceManager::~DeviceManager()
 Device * DeviceManager::createDeviceFromJSON(const json &parameters)
 {
     Device * device = nullptr;
-    QThread * deviceThread = nullptr;
 
     if (!parameters.empty()){
         if (QString::compare(parameters["type"].get<std::string>().c_str(), "Tercon") == 0){
-            deviceThread = new QThread;
             device = new Tercon;
-
-            device->moveToThread(deviceThread);
-            deviceThread->start(QThread::HighPriority);
 
             if(!device->initialization()){
                 qDebug() << "initialization fail";
@@ -36,11 +31,7 @@ Device * DeviceManager::createDeviceFromJSON(const json &parameters)
                 qDebug() << "set settings fail";
             }
         } else if(QString::compare(parameters["type"].get<std::string>().c_str(), "Mit_8_20") == 0){
-            deviceThread = new QThread;
             device = new Mit_8_20;
-
-            device->moveToThread(deviceThread);
-            deviceThread->start(QThread::HighPriority);
 
             if(!device->initialization()){
                 qDebug() << "initialization fail";
@@ -51,27 +42,17 @@ Device * DeviceManager::createDeviceFromJSON(const json &parameters)
             }
         }
     }
-    devices.push_back(qMakePair(deviceThread, device));
+    devices.push_back(device);
     return device;
 }
 
 bool DeviceManager::destroyDevices()
 {    
     while (!devices.isEmpty()) {
-        Device * device = devices.back().second;
-        QThread * deviceThread = devices.back().first;
+        Device * device = devices.back();
         device->stop();
         device->disconnectDevice();
-        deviceThread->quit();
-        if (!deviceThread->wait(60*1000)){
-            qDebug() << "thread force terminate";
-            deviceThread->terminate();
-            deviceThread->wait();
-        }
-
         delete device;
-        delete deviceThread;
-
         devices.pop_back();
     }
 

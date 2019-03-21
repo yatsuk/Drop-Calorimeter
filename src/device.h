@@ -18,7 +18,7 @@ class DeviceManager: public QObject
     Q_OBJECT
 
 public:
-    explicit DeviceManager(QObject *parent = 0);
+    explicit DeviceManager(QObject *parent = nullptr);
     Device * createDeviceFromJSON(const json &parameters);
     ~DeviceManager();
 
@@ -26,7 +26,7 @@ public slots:
     bool destroyDevices();
 
 private:
-    QList <QPair <QThread *, Device *> > devices;
+    QList <Device *> devices;
 
 };
 
