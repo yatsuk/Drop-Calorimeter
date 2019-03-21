@@ -109,7 +109,11 @@ double TermocoupleConverter::receive(TerconData data, bool * ok)
     } else if (type==A1){
         if(ok)*ok=true;
         return voltageToTemperatureTypeA1(data.value + coldVoltage);
+    } else if (type==K){
+        if(ok)*ok=true;
+        return voltageToTemperatureTypeK(data.value + coldVoltage);
     }
+
     if(ok)*ok=false;
     return 0;
 }
@@ -130,6 +134,11 @@ void TermocoupleConverter::setSetting(const json &parameters)
         if (isConstColdTemperature){
             coldVoltage = temperatureToVoltageTypeA1(thermocoupleSettings["coldTemperature"]);
         }
+    } else if (thermocoupleSettings["type"].get<std::string>()=="K"){
+        type = K;
+        if (isConstColdTemperature){
+            coldVoltage = temperatureToVoltageTypeK(thermocoupleSettings["coldTemperature"]);
+        }
     }
 
     parameters_ = parameters;
@@ -144,6 +153,9 @@ void TermocoupleConverter::emitData(TerconData data)
                 isSetColdVoltage = true;
             } else if (type==A1){
                 coldVoltage = temperatureToVoltageTypeA1(data.value);
+                isSetColdVoltage = true;
+            } else if (type==K){
+                coldVoltage = temperatureToVoltageTypeK(data.value);
                 isSetColdVoltage = true;
             }
             return;
@@ -169,7 +181,7 @@ void TermocoupleConverter::emitData(TerconData data)
 double TermocoupleConverter::voltageToTemperatureTypeA1 (double voltage)
 {
     voltage=voltage*1e+3;
-    long double temperature=0.9643027
+    double temperature=0.9643027
             + 79.495086*voltage
             - 4.9990310*pow(voltage,2)
             + 0.6341776*pow(voltage,3)
@@ -183,7 +195,7 @@ double TermocoupleConverter::voltageToTemperatureTypeA1 (double voltage)
 
 double TermocoupleConverter::temperatureToVoltageTypeA1 (double temperature)
 {
-    long double volt =7.1564735E-04
+    double volt =7.1564735E-04
             + 1.1951905E-02*temperature
             + 1.6672625E-05*pow(temperature,2)
             - 2.8287807E-08*pow(temperature,3)
@@ -198,7 +210,7 @@ double TermocoupleConverter::temperatureToVoltageTypeA1 (double temperature)
 double TermocoupleConverter::voltageToTemperatureTypeS (double voltage)
 {
     voltage=voltage*1e+3;
-    long double temperature=0;
+    double temperature=0;
     if (voltage < 1.874){
         temperature+=1.8494946E+02*voltage;
         temperature-=8.00504062E+01*pow(voltage,2);
@@ -235,7 +247,7 @@ double TermocoupleConverter::voltageToTemperatureTypeS (double voltage)
 
 double TermocoupleConverter::temperatureToVoltageTypeS (double temperature)
 {
-    long double voltage=0;
+    double voltage=0;
     if (temperature < 1064.18){
         voltage+=5.40313308631E-03*temperature;
         voltage+=1.25934289740E-05*pow(temperature,2);
@@ -260,6 +272,37 @@ double TermocoupleConverter::temperatureToVoltageTypeS (double temperature)
         voltage-=9.43223690612E-18*pow(temperature,4);
     }
     return voltage*1e-3;
+}
+
+double TermocoupleConverter::voltageToTemperatureTypeK (double voltage)
+{
+    voltage=voltage*1e+3;
+    double temperature=25.08355*voltage
+            +7.860106E-2*pow(voltage,2)
+            -2.503131E-1*pow(voltage,3)
+            +8.315270E-2*pow(voltage,4)
+            -1.228034E-2*pow(voltage,5)
+            +9.804036E-4*pow(voltage,6)
+            -4.413030E-5*pow(voltage,7)
+            +1.057734E-6*pow(voltage,8)
+            -1.052755E-8*pow(voltage,9);
+    return temperature;
+}
+
+double TermocoupleConverter::temperatureToVoltageTypeK (double temperature)
+{
+    double volt =-1.7600413686E-2
+            + 3.8921204975E-2*temperature
+            + 1.8558770032E-5*pow(temperature,2)
+            - 9.9457592874E-8*pow(temperature,3)
+            + 3.1840945719E-10*pow(temperature,4)
+            - 5.6072844889E-13*pow(temperature,5)
+            + 5.6075059059E-16*pow(temperature,6)
+            - 3.2020720003E-19*pow(temperature,7)
+            + 9.7151147152E-23*pow(temperature,8)
+            - 1.2104721275E-26*pow(temperature,9)
+            + 1.185976E-1*exp(-1.183432E-4 * pow((temperature - 126.9686),2));
+    return volt*1e-3;
 }
 
 
@@ -287,7 +330,7 @@ void ResistanceThermometerConverter::setSetting(const json &parameters)
 
 double ResistanceThermometerConverter::resistanceToTemperaturePt100 (double resistance)
 {
-    double temperature=-308.27598
-            + 3.01975*resistance;
+    double temperature=-335.19856
+            + 3.20087*resistance;
     return temperature;
 }

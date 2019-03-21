@@ -62,7 +62,7 @@ protected:
     virtual void emitData(TerconData data);
 
 private:
-    enum Type {A1, S, Undef};
+    enum Type {A1, S, K, Undef};
     Type type;
     double coldVoltage;
 
@@ -71,6 +71,9 @@ private:
 
     double voltageToTemperatureTypeS (double voltage);
     double temperatureToVoltageTypeS (double temperature);
+
+    double voltageToTemperatureTypeK (double voltage);
+    double temperatureToVoltageTypeK (double temperature);
 
     bool isConstColdTemperature;
     bool isSetColdVoltage = false;
