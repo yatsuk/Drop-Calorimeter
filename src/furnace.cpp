@@ -3,7 +3,7 @@
 #include <fstream>
 #include <QDebug>
 
-Furnace * Furnace::g_furnace = 0;
+Furnace * Furnace::g_furnace = nullptr;
 
 Furnace::Furnace(QObject *parent) :
     QObject(parent)
