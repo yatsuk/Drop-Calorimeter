@@ -79,20 +79,4 @@ private:
     bool isSetColdVoltage = false;
 };
 
-class ResistanceThermometerConverter: public Filter
-{
-
-public:
-    void setSetting(const json &parameters);
-
-protected:
-    virtual double receive(TerconData data, bool * ok = nullptr);
-
-private:
-    enum Type {Pt100, Undef};
-    Type type;
-
-    double resistanceToTemperaturePt100 (double resistance);
-};
-
 #endif // FILTER_H

@@ -21,8 +21,6 @@ Filter * Filter::createFilterFromJSON(const json &parameters)
             filter = new TermocoupleConverter;
         } else if (parameters["type"].get<std::string>()=="MA"){
             filter = new MovingAverage;
-        } else if (parameters["type"].get<std::string>()=="ResistanceThermometer"){
-            filter = new ResistanceThermometerConverter;
         }
 
         if (filter){
@@ -91,6 +89,7 @@ double MovingAverage::emaValue(TerconData newValue)
     if (firstValue_){
         lastEmaValue = newValue.value;
         firstValue_ = false;
+
         return newValue.value;
     }
     double ema = alpha*newValue.value + (1.0 - alpha)*lastEmaValue;
@@ -305,32 +304,3 @@ double TermocoupleConverter::temperatureToVoltageTypeK (double temperature)
     return volt*1e-3;
 }
 
-
-
-
-double ResistanceThermometerConverter::receive(TerconData data, bool * ok)
-{
-    if (type==Pt100){
-        if(ok)*ok=true;
-        return resistanceToTemperaturePt100(data.value);
-    }
-    if(ok)*ok=false;
-    return 0;
-}
-
-void ResistanceThermometerConverter::setSetting(const json &parameters)
-{
-    json thermometerSettings = parameters["settings"];
-    type = Undef;
-    if (thermometerSettings["type"].get<std::string>()=="Pt100"){
-        type = Pt100;
-    }
-    parameters_ = parameters;
-}
-
-double ResistanceThermometerConverter::resistanceToTemperaturePt100 (double resistance)
-{
-    double temperature=-335.19856
-            + 3.20087*resistance;
-    return temperature;
-}
