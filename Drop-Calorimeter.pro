@@ -12,6 +12,7 @@ TEMPLATE = app
 CONFIG += c++14
 QMAKE_LFLAGS += -no-pie
 SOURCES += src/main.cpp\
+    src/lt300.cpp \
     src/temperatureSegment.cpp \
     src/segments.cpp \
     src/regulator.cpp \
@@ -51,6 +52,7 @@ SOURCES += src/main.cpp\
     src/mit_8_20.cpp
 
 HEADERS  += src/shared.h \
+    src/lt300.h \
     src/parameters.h \
     src/temperatureSegment.h \
     src/segments.h \
