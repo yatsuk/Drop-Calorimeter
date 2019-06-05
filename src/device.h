@@ -6,6 +6,7 @@
 #include <QThread>
 #include <QVector>
 #include <QPair>
+#include <QTimer>
 #include "shared.h"
 #include "terconData.h"
 
@@ -35,7 +36,7 @@ class Device : public QObject
     Q_OBJECT
 
 public:
-    explicit Device(QObject *parent = 0);
+    explicit Device(QObject *parent = nullptr);
     ~Device();
 
 signals:
@@ -44,16 +45,26 @@ signals:
     void data (json);
 
 public slots:
-    virtual bool setSetting(const json &parameters){parameters_ = parameters;return true;}
+    virtual bool setSetting(const json &parameters);
     virtual json getSetting(){return parameters_;}
-    virtual bool initialization(){return false;}
-    virtual bool connectDevice(){return false;}
-    virtual bool disconnectDevice(){return false;}
-    virtual bool start(){return false;}
-    virtual bool stop(){return false;}
+    virtual bool initialization(){return true;}
+    virtual bool connectDevice(){return true;}
+    virtual bool disconnectDevice(){return true;}
+    virtual bool start(){resetTimeoutTimer(); return true;}
+    virtual bool stop(){stopTimeoutTimer(); return true;}
+    void deviceDataSended();
+
+private slots:
+    void deviceTimerTimeout();
 
 protected:
+    void resetTimeoutTimer();
+    void stopTimeoutTimer();
+
     json parameters_;
+    QTimer * deviceTimer_;
+    bool deviceNotWorking_ = false;
+    int deviceTimerTimeout_;
 };
 
 

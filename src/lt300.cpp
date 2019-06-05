@@ -16,6 +16,7 @@ LT300::~LT300()
 
 bool LT300::initialization()
 {
+    Device::initialization();
     port = new QSerialPort;
     connect(port, &QSerialPort::readyRead, this, &LT300::readData);
 
@@ -35,16 +36,19 @@ bool LT300::setSetting(const json &parameters)
 
 bool LT300::start()
 {
+    Device::start();
     return true;
 }
 
 bool LT300::stop()
 {
+    Device::stop();
     return true;
 }
 
 bool LT300::connectDevice()
 {
+    Device::connectDevice();
     if(!port || port->portName().isEmpty())
         return false;
 
@@ -62,6 +66,7 @@ bool LT300::connectDevice()
 
 bool LT300::disconnectDevice()
 {
+    Device::disconnectDevice();
     if (port && port->isOpen()){
         port->close();
         return true;
@@ -124,6 +129,7 @@ void LT300::extractData(){
 }
 
 void LT300::readData(){
+    Device::deviceDataSended();
     recvBytes.append(port->readAll());
     extractData();
 }

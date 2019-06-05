@@ -3,7 +3,7 @@
 
 Tercon::Tercon()
 {
-    port = 0;
+    port = nullptr;
 }
 
 Tercon::~Tercon()
@@ -14,6 +14,7 @@ Tercon::~Tercon()
 
 bool Tercon::initialization()
 {
+    Device::initialization();
     port = new QSerialPort;
     connect(port, &QSerialPort::readyRead, this, &Tercon::readData);
 
@@ -33,16 +34,19 @@ bool Tercon::setSetting(const json &parameters)
 
 bool Tercon::start()
 {
+    Device::start();
     return true;
 }
 
 bool Tercon::stop()
 {
+    Device::stop();
     return true;
 }
 
 bool Tercon::connectDevice()
 {
+    Device::connectDevice();
     if(!port || port->portName().isEmpty())
         return false;
 
@@ -59,6 +63,7 @@ bool Tercon::connectDevice()
 
 bool Tercon::disconnectDevice()
 {
+    Device::disconnectDevice();
     if (port && port->isOpen()){
         port->close();
         return true;
@@ -122,6 +127,7 @@ void Tercon::extractData(){
 }
 
 void Tercon::readData(){
+    Device::deviceDataSended();
     recvBytes.append(port->readAll());
     extractData();
 }

@@ -78,12 +78,46 @@ bool DeviceManager::destroyDevices()
 Device::Device(QObject *parent) :
     QObject(parent)
 {
-
+    deviceTimer_ = new QTimer(this);
+    deviceTimer_->setSingleShot(true);
+    connect(deviceTimer_, &QTimer::timeout, this, &Device::deviceTimerTimeout);
 }
 
 Device::~Device()
 {
 
+}
+
+bool Device::setSetting(const json &parameters)
+{
+    parameters_ = parameters;
+    deviceTimerTimeout_ = parameters_["deviceTimeout"].get<int>();
+    return true;
+}
+
+void Device::deviceTimerTimeout()
+{
+    emit message(tr("Предупрежение! Устройство \"%1\": В течение %2 мс устройство не передаёт данные.").arg(parameters_["name"].get<std::string>().c_str()).arg(deviceTimerTimeout_),Shared::warning);
+    deviceNotWorking_ = true;
+}
+
+void Device::deviceDataSended()
+{
+    if(deviceNotWorking_){
+        emit message(tr("Предупрежение! Устройство \"%1\": Устройство возобновило передачу данных.").arg(parameters_["name"].get<std::string>().c_str()),Shared::warning);
+    }
+    deviceNotWorking_ = false;
+    resetTimeoutTimer();
+}
+
+void Device::resetTimeoutTimer()
+{
+    deviceTimer_->start(deviceTimerTimeout_);
+}
+
+void Device::stopTimeoutTimer()
+{
+    deviceTimer_->stop();
 }
 
 
