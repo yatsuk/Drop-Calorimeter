@@ -10,7 +10,6 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets serialport printsupport opengl
 TARGET = Drop-Calorimeter
 TEMPLATE = app
 CONFIG += c++14
-QMAKE_LFLAGS += -no-pie
 SOURCES += src/main.cpp\
     src/lt300.cpp \
     src/temperatureSegment.cpp \
@@ -103,6 +102,7 @@ LIBS += -lws2_32
 
 linux {
     LIBS += -lltrapi -lltr27api -lltr34api -lltr43api -lltr114api
+    QMAKE_LFLAGS += -no-pie
 }
 
 FORMS += \
