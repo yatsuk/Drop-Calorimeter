@@ -53,7 +53,7 @@ bool Mit_8_20::connectDevice()
     port->setBaudRate(QSerialPort::Baud9600);
 
     if(!port->open(QIODevice::ReadOnly)){
-        emit message(tr("Ошибка открытия порта %1").arg(port->portName()),Shared::warning);
+        sendMessage(tr("Ошибка открытия com-порта %1").arg(port->portName()),Shared::critical);
         return false;
     }
 
@@ -82,15 +82,13 @@ void Mit_8_20::convertData(QByteArray strData){
     TerconData data;
     data.value = valueStr.toDouble(&convertIsOK);
     if (!convertIsOK){
-        emit message(tr("Ошибка чтения данных МИТ8.20\n"
-                        "(невозможно преобразовать строку в число): ")+strData+".",Shared::warning);
+        sendMessage(tr("Невозможно преобразовать строку в число: (%1).").arg(valueStr),Shared::warning);
         return;
     }
 
     int channelNumber = strData.left(1).toInt(&convertIsOK);
     if (!convertIsOK){
-        emit message(tr("Ошибка чтения данных МИТ8.20\n"
-                        "(неверный номер канала): ")+strData+".",Shared::warning);
+        sendMessage(tr("Неверный номер канала: (%1).").arg(QString(strData.left(1))),Shared::warning);
         return;
     }
 

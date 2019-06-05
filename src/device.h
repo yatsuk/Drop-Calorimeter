@@ -58,6 +58,7 @@ private slots:
     void deviceTimerTimeout();
 
 protected:
+    void sendMessage(const QString & msg, Shared::MessageLevel msgLevel);
     void resetTimeoutTimer();
     void stopTimeoutTimer();
 

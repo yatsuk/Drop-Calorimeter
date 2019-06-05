@@ -55,7 +55,7 @@ bool LT300::connectDevice()
     port->setBaudRate(QSerialPort::Baud4800);
 
     if(!port->open(QIODevice::ReadWrite)){
-        emit message(tr("Ошибка открытия порта %1").arg(port->portName()),Shared::warning);
+        sendMessage(tr("Ошибка открытия com-порта %1").arg(port->portName()),Shared::critical);
         return false;
     }
 
@@ -87,21 +87,19 @@ void LT300::convertData(QByteArray strData){
     strData = strData.simplified();
     int indexSeparator = strData.indexOf(" ");
     if(indexSeparator==-1){
-        emit message(tr("Ошибка чтения данных LT300\n"
-                        "(разделитель не обнаружен): ")+strData+".",Shared::warning);
+        sendMessage(tr("Разделитель не обнаружен: (%1).").arg(QString(strData)),Shared::warning);
         return;
     }
 
-    strData.left(indexSeparator).toDouble(&convertIsOK);
+    int indexStartData = strData.indexOf("d");
+    strData.mid(indexStartData + 1, indexSeparator - indexStartData).toDouble(&convertIsOK);
     if (!convertIsOK){
-        emit message(tr("Ошибка чтения данных LT300\n"
-                        "(невозможно преобразовать строку в число): ")+strData+".",Shared::warning);
+        sendMessage(tr("Невозможно преобразовать строку в число: (%1).").arg(QString(strData.mid(indexStartData + 1, indexSeparator - indexStartData))),Shared::warning);
         return;
     }
-    data.value = strData.right(indexSeparator - 2).toDouble(&convertIsOK);
+    data.value = strData.right(strData.length() - indexSeparator - 1).toDouble(&convertIsOK);
     if (!convertIsOK){
-        emit message(tr("Ошибка чтения данных LT300\n"
-                        "(невозможно преобразовать строку в число): ")+strData+".",Shared::warning);
+        sendMessage(tr("Невозможно преобразовать строку в число: (%1).").arg(QString(strData.right(strData.length() - indexSeparator - 1))),Shared::warning);
         return;
     }
 

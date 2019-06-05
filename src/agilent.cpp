@@ -1,5 +1,4 @@
 #include "agilent.h"
-#include <math.h>
 #include <QDebug>
 
 Agilent::Agilent(QObject *parent) :
@@ -88,7 +87,6 @@ void Agilent::initData(){
     port->write("SYST:REM\r\n");
     port->write(":CONFigure:VOLTage:DC MIN, MIN\r\n");
     QTimer::singleShot(2000,this,SLOT(writeData()));
-
 }
 
 void Agilent::finalize(){

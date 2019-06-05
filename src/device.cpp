@@ -95,16 +95,29 @@ bool Device::setSetting(const json &parameters)
     return true;
 }
 
+void Device::sendMessage(const QString & msg, Shared::MessageLevel msgLevel)
+{
+    QString completeMessage;
+    if(msgLevel == Shared::MessageLevel::warning){
+        completeMessage.append(tr("Предупрежение! "));
+    } else if (msgLevel == Shared::MessageLevel::critical){
+        completeMessage.append(tr("Ошибка! "));
+    }
+    completeMessage.append(tr("Устройство \"%1\": ").arg(parameters_["name"].get<std::string>().c_str()));
+    completeMessage.append(msg);
+    emit (message(completeMessage, msgLevel));
+}
+
 void Device::deviceTimerTimeout()
 {
-    emit message(tr("Предупрежение! Устройство \"%1\": В течение %2 мс устройство не передаёт данные.").arg(parameters_["name"].get<std::string>().c_str()).arg(deviceTimerTimeout_),Shared::warning);
+    sendMessage(tr("В течение %1 мс устройство не передаёт данные.").arg(deviceTimerTimeout_),Shared::warning);
     deviceNotWorking_ = true;
 }
 
 void Device::deviceDataSended()
 {
     if(deviceNotWorking_){
-        emit message(tr("Предупрежение! Устройство \"%1\": Устройство возобновило передачу данных.").arg(parameters_["name"].get<std::string>().c_str()),Shared::warning);
+        sendMessage(tr("Устройство возобновило передачу данных."),Shared::information);
     }
     deviceNotWorking_ = false;
     resetTimeoutTimer();

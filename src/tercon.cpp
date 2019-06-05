@@ -53,7 +53,7 @@ bool Tercon::connectDevice()
     port->setBaudRate(QSerialPort::Baud9600);
 
     if(!port->open(QIODevice::ReadOnly)){
-        emit message(tr("Ошибка открытия порта %1").arg(port->portName()),Shared::warning);
+        sendMessage(tr("Ошибка открытия com-порта %1").arg(port->portName()),Shared::critical);
         return false;
     }
 
@@ -81,16 +81,14 @@ void Tercon::convertData(QByteArray strData){
     QString unitAndNumberData = tempStr.left(indexSeparator+1);
     tempStr.remove(0,indexSeparator+1);
     if(indexSeparator==-1){
-        emit message(tr("Ошибка чтения данных Теркона\n"
-                        "(разделитель не обнаружен): ")+strData+".",Shared::warning);
+        sendMessage(tr("Разделитель не обнаружен: (%1).").arg(QString(strData)),Shared::warning);
         return;
     }
 
     TerconData data;
     data.value = tempStr.toDouble(&convertIsOK);
     if (!convertIsOK){
-        emit message(tr("Ошибка чтения данных Теркона\n"
-                        "(невозможно преобразовать строку в число): ")+strData+".",Shared::warning);
+        sendMessage(tr("Невозможно преобразовать строку в число: (%1).").arg(tempStr),Shared::warning);
         return;
     }
 
@@ -101,8 +99,7 @@ void Tercon::convertData(QByteArray strData){
     unitAndNumberData.chop(1);
     int channelNumber = unitAndNumberData.toInt(&convertIsOK);
     if (!convertIsOK){
-        emit message(tr("Ошибка чтения данных Теркона\n"
-                        "(неверный номер канала): ")+strData+".",Shared::warning);
+        sendMessage(tr("Неверный номер канала: (%1).").arg(unitAndNumberData),Shared::warning);
         return;
     }
 
