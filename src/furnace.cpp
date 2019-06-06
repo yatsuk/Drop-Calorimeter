@@ -330,27 +330,6 @@ void Furnace::run(){
             this,SIGNAL(message(QString,Shared::MessageLevel)));
     connect(arduino,SIGNAL(message(QString,Shared::MessageLevel)),
             this,SIGNAL(message(QString,Shared::MessageLevel)));
-
-    
-    // ////////////////
-    /*connect(ltr43,SIGNAL(lowerPressure()),
-            m_diagnostic,SLOT(lowerPressure()));
-    connect(ltr43,SIGNAL(normalPressure()),
-            m_diagnostic,SLOT(normalPressure()));
-    connect(ltr43,SIGNAL(upperPressure()),
-            m_diagnostic,SLOT(upperPressure()));
-    connect(regulatorOfFurnace,SIGNAL(startRegulator()),
-            m_diagnostic,SLOT(startEmitAlarmSignals()));
-    connect(regulatorOfFurnace,SIGNAL(stopRegulator()),
-            m_diagnostic,SLOT(stopEmitAlarmSignals()));
-    connect(m_diagnostic,SIGNAL(smoothOffRegulator()),
-            regulatorOfFurnace,SLOT(smoothOff()));
-            
-    connect(m_diagnostic,SIGNAL(smoothOffRegulator()),
-            regulatorOfThermostat,SLOT(smoothOff()));
-    connect(m_diagnostic,SIGNAL(message(QString,Shared::MessageLevel)),
-            this,SIGNAL(message(QString,Shared::MessageLevel)));*/
-    //  ////////////////
     
     
     connect(ltr114,SIGNAL(dataSend(TerconData)),
@@ -379,7 +358,6 @@ bool Furnace::closeAppRequest()
     deviceManager->destroyDevices();
     
     if (ltr114->stop()){
-        //dataRecorder->convertDataFile();
         return true;
     }
     return false;

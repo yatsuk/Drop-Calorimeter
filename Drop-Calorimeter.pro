@@ -17,7 +17,6 @@ SOURCES += src/main.cpp\
     src/regulator.cpp \
     src/tercon.cpp \
     src/furnace.cpp \
-    src/terconData.cpp \
     src/dac.cpp \
     src/diagnostic.cpp \
     src/ltr43.cpp \

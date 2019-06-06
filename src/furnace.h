@@ -27,7 +27,7 @@ class Furnace : public QObject
     Q_OBJECT
 
 public:
-    explicit Furnace(QObject *parent = 0);
+    explicit Furnace(QObject *parent = nullptr);
     ~Furnace();
     Regulator * regulatorFurnace();
     Regulator * regulatorThermostat();
