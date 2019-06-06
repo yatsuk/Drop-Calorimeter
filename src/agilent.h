@@ -5,38 +5,38 @@
 #include <QTimer>
 #include <QVector>
 #include <QSerialPort>
+#include "device.h"
 #include "terconData.h"
 #include "shared.h"
 #include "parameters.h"
 
-class Agilent : public QObject
+class Agilent : public Device
 {
     Q_OBJECT
 public:
-    explicit Agilent(QObject *parent = 0);
+    Agilent();
+    ~Agilent();
     bool startAck();
     bool stopAck();
 
-signals:
-    void dataSend(TerconData data);
-    void message(const QString & msg, Shared::MessageLevel msgLevel);
-
 private slots:
+    bool initialization();
+    bool setSetting(const json &parameters);
+    bool connectDevice();
+    bool disconnectDevice();
+    bool start();
+
     void readData();
     void writeData();
     void initData();
-    void finalize();
     void extractData();
     void convertData(QString strData);
 
 private:
 
-    double offsetVoltRoomTemperature;
-    int deviceNumber;
     QSerialPort * port;
     QByteArray recvBytes;
-    bool adcRunning;
-
+    json channelArray;
 
     QTimer * emergencyTimer;
 

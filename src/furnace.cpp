@@ -32,7 +32,6 @@ Furnace::Furnace(QObject *parent) :
     sampleLock = new SampleLock(this);
     dropDevice = new DropDevice(this);
     arduino = new Arduino(this);
-    agilent = new Agilent(this);
     
     dac = new DAC(this);
     adc = new ADC(this);
@@ -175,7 +174,7 @@ void Furnace::terconDataReceive(TerconData data){
     emit AdcTerconDataSend(data);
 }
 
-bool Furnace::connectTercon(){
+bool Furnace::connectDevices(){
     if(settings_.empty()) return false;
     json devicesArray = settings_["Devices"];
     for (unsigned int i = 0; i < devicesArray.size(); ++i) {
@@ -212,13 +211,13 @@ void Furnace::receiveData(TerconData data){
     }
     else if(data.id == "{33bc6e29-4e26-41a6-85f1-cfa0bc5525b9}"){ //up heater
         double setPointMainHeater = regulatorOfFurnace->getSetPoint();
-        if (setPointMainHeater!=0){
+        if (setPointMainHeater>0){
             regulatorUpHeater_->setValueADC(data.value - setPointMainHeater);
         }
     }
     else if(data.id == "{7cb4d773-5b1d-4060-b316-24045308317f}"){//down heater
         double setPointMainHeater = regulatorOfFurnace->getSetPoint();
-        if (setPointMainHeater!=0){
+        if (setPointMainHeater>0){
             regulatorDownHeater_->setValueADC(data.value - setPointMainHeater);
         }
     }
@@ -362,7 +361,7 @@ void Furnace::run(){
             this,SIGNAL(message(QString,Shared::MessageLevel)));
     
     dataManager->setSettings(settings_);
-    connectTercon();
+    connectDevices();
     
     dac->initializationLTR();
     dac->initializationLTR34();
@@ -371,19 +370,12 @@ void Furnace::run(){
     ltr43->initializationLTR43();
     ltr114->initialization();
     ltr114->start();
-
-    connect(agilent,SIGNAL(dataSend(TerconData)),
-            this,SLOT(terconDataReceive(TerconData)));
-    connect(agilent,SIGNAL(message(QString,Shared::MessageLevel)),
-            this,SIGNAL(message(QString,Shared::MessageLevel)));
-    agilent->startAck();
 }
 
 bool Furnace::closeAppRequest()
 {
     saveJSONSettings();
     arduino->stopAck();
-    agilent->stopAck();
     deviceManager->destroyDevices();
     
     if (ltr114->stop()){

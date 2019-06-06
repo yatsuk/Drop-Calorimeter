@@ -2,6 +2,7 @@
 #include "tercon.h"
 #include "mit_8_20.h"
 #include "lt300.h"
+#include "agilent.h"
 #include <QTime>
 #include <QDebug>
 
@@ -23,33 +24,20 @@ Device * DeviceManager::createDeviceFromJSON(const json &parameters)
     if (!parameters.empty()){
         if (QString::compare(parameters["type"].get<std::string>().c_str(), "Tercon") == 0){
             device = new Tercon;
-
-            if(!device->initialization()){
-                qDebug() << "initialization fail";
-            }
-            device->setObjectName(parameters["id"].get<std::string>().c_str());
-            if(!device->setSetting(parameters)){
-                qDebug() << "set settings fail";
-            }
         } else if(QString::compare(parameters["type"].get<std::string>().c_str(), "Mit_8_20") == 0){
             device = new Mit_8_20;
-
-            if(!device->initialization()){
-                qDebug() << "initialization fail";
-            }
-            device->setObjectName(parameters["id"].get<std::string>().c_str());
-            if(!device->setSetting(parameters)){
-                qDebug() << "set settings fail";
-            }
         } else if(QString::compare(parameters["type"].get<std::string>().c_str(), "Lt300") == 0){
             device = new LT300;
-
+        } else if(QString::compare(parameters["type"].get<std::string>().c_str(), "Agilent") == 0){
+            device = new Agilent;
+        }
+        if (device != nullptr){
             if(!device->initialization()){
-                qDebug() << "initialization fail";
+                device->sendMessage(tr("Сбой инициализации."), Shared::MessageLevel::critical);
             }
             device->setObjectName(parameters["id"].get<std::string>().c_str());
             if(!device->setSetting(parameters)){
-                qDebug() << "set settings fail";
+                device->sendMessage(tr("Сбой установки настроек."), Shared::MessageLevel::critical);
             }
         }
     }
@@ -92,6 +80,73 @@ bool Device::setSetting(const json &parameters)
 {
     parameters_ = parameters;
     deviceTimerTimeout_ = parameters_["deviceTimeout"].get<int>();
+    return true;
+}
+
+bool Device::openSerialPortSettings(QSerialPort * port, const json &portSettings)
+{
+    if(port == nullptr) return false;
+    port->setPortName(portSettings["portName"].get<std::string>().c_str());
+    port->setBaudRate(portSettings["baudRate"].get<int>());
+
+    if(QString::compare(portSettings["dataBits"].get<std::string>().c_str(), "Data5") == 0){
+        port->setDataBits(QSerialPort::Data5);
+    } else if (QString::compare(portSettings["dataBits"].get<std::string>().c_str(), "Data6") == 0){
+        port->setDataBits(QSerialPort::Data6);
+    } else if (QString::compare(portSettings["dataBits"].get<std::string>().c_str(), "Data7") == 0){
+        port->setDataBits(QSerialPort::Data7);
+    } else if (QString::compare(portSettings["dataBits"].get<std::string>().c_str(), "Data8") == 0){
+        port->setDataBits(QSerialPort::Data8);
+    }
+
+    if(QString::compare(portSettings["parity"].get<std::string>().c_str(), "NoParity") == 0){
+        port->setParity(QSerialPort::NoParity);
+    } else if (QString::compare(portSettings["parity"].get<std::string>().c_str(), "EvenParity") == 0){
+        port->setParity(QSerialPort::EvenParity);
+    } else if (QString::compare(portSettings["parity"].get<std::string>().c_str(), "OddParity") == 0){
+        port->setParity(QSerialPort::OddParity);
+    } else if (QString::compare(portSettings["parity"].get<std::string>().c_str(), "SpaceParity") == 0){
+        port->setParity(QSerialPort::SpaceParity);
+    } else if (QString::compare(portSettings["parity"].get<std::string>().c_str(), "MarkParity") == 0){
+        port->setParity(QSerialPort::MarkParity);
+    }
+
+    if(QString::compare(portSettings["stopBits"].get<std::string>().c_str(), "OneStop") == 0){
+        port->setStopBits(QSerialPort::OneStop);
+    } else if (QString::compare(portSettings["stopBits"].get<std::string>().c_str(), "OneAndHalfStop") == 0){
+        port->setStopBits(QSerialPort::OneAndHalfStop);
+    } else if (QString::compare(portSettings["stopBits"].get<std::string>().c_str(), "TwoStop") == 0){
+        port->setStopBits(QSerialPort::TwoStop);
+    }
+
+    if(QString::compare(portSettings["flowControl"].get<std::string>().c_str(), "NoFlowControl") == 0){
+        port->setFlowControl(QSerialPort::NoFlowControl);
+    } else if (QString::compare(portSettings["flowControl"].get<std::string>().c_str(), "HardwareControl") == 0){
+        port->setFlowControl(QSerialPort::HardwareControl);
+    } else if (QString::compare(portSettings["flowControl"].get<std::string>().c_str(), "SoftwareControl") == 0){
+        port->setFlowControl(QSerialPort::SoftwareControl);
+    }
+
+    QIODevice::OpenModeFlag openMode = QIODevice::ReadWrite;
+    if(QString::compare(portSettings["openMode"].get<std::string>().c_str(), "ReadOnly") == 0){
+        openMode = QIODevice::ReadOnly;
+    } else if (QString::compare(portSettings["openMode"].get<std::string>().c_str(), "WriteOnly") == 0){
+        openMode = QIODevice::WriteOnly;
+    } else if (QString::compare(portSettings["openMode"].get<std::string>().c_str(), "ReadWrite") == 0){
+        openMode = QIODevice::ReadWrite;
+    }
+
+    if(!port->open(openMode)){
+        sendMessage(tr("Ошибка открытия com-порта %1").arg(port->portName()),Shared::critical);
+        return false;
+    }
+
+    if(portSettings["rts"].get<bool>()){
+        port->setRequestToSend(true);
+    } else {
+        port->setRequestToSend(false);
+    }
+
     return true;
 }
 

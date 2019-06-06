@@ -7,6 +7,7 @@
 #include <QVector>
 #include <QPair>
 #include <QTimer>
+#include <QtSerialPort>
 #include "shared.h"
 #include "terconData.h"
 
@@ -53,12 +54,13 @@ public slots:
     virtual bool start(){resetTimeoutTimer(); return true;}
     virtual bool stop(){stopTimeoutTimer(); return true;}
     void deviceDataSended();
+    void sendMessage(const QString & msg, Shared::MessageLevel msgLevel);
 
 private slots:
     void deviceTimerTimeout();
 
 protected:
-    void sendMessage(const QString & msg, Shared::MessageLevel msgLevel);
+    bool openSerialPortSettings(QSerialPort * port, const json &portSettings);
     void resetTimeoutTimer();
     void stopTimeoutTimer();
 

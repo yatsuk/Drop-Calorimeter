@@ -1,10 +1,8 @@
 #include "agilent.h"
 #include <QDebug>
 
-Agilent::Agilent(QObject *parent) :
-    QObject(parent)
+Agilent::Agilent()
 {
-    adcRunning = false;
     port = new QSerialPort(this);
     emergencyTimer = new QTimer(this);
 
@@ -13,22 +11,77 @@ Agilent::Agilent(QObject *parent) :
     connect(port,SIGNAL(readyRead()),this,SLOT(readData()));
 }
 
+Agilent::~Agilent()
+{
+    if (port)
+        delete port;
+}
+
+bool Agilent::initialization()
+{
+    Device::initialization();
+    port = new QSerialPort;
+    connect(port, &QSerialPort::readyRead, this, &Agilent::readData);
+
+    return true;
+}
+
+bool Agilent::setSetting(const json &parameters)
+{
+    Device::setSetting(parameters);
+    channelArray = parameters["channels"];
+    return true;
+}
+
+bool Agilent::connectDevice()
+{
+    Device::connectDevice();
+    return openSerialPortSettings(port, parameters_["connectionSettings"]);
+}
+
+bool Agilent::disconnectDevice()
+{
+    Device::disconnectDevice();
+    if (port && port->isOpen()){
+        port->write("SYST:LOC\r\n");
+        port->close();
+        return true;
+    }
+
+    return false;
+}
+
+bool Agilent::start()
+{
+    Device::start();
+    QTimer::singleShot(2000,this,SLOT(initData()));
+    return true;
+}
+
 void Agilent::convertData(QString strData){
     QTimer::singleShot(100,this,SLOT(writeData()));
 
     strData = strData.trimmed();
     TerconData data;
-    data.unit=tr("В");
-    data.id = "{0986e158-6266-4d5e-8498-fa5c3cd84bbe}";
 
     bool okConvertation;
     data.value = strData.toDouble(&okConvertation);
     if (!okConvertation){
-        emit message(tr("Agilent: Ошибка чтения значения \"%1\"").arg(strData),Shared::warning);
+        sendMessage(tr("Невозможно преобразовать строку в число: (%1).").arg(strData),Shared::warning);
         return;
     }
 
-    dataSend(data);
+    int channelNumber = 1;
+    for (unsigned int i = 0; i < channelArray.size(); ++i){
+        json channel = channelArray[i];
+        if (channel["channelNumber"] == channelNumber){
+
+            data.id = channel["id"].get<std::string>().c_str();
+            data.unit = channel["unit"].get<std::string>().c_str();
+            emit dataSend(data);
+            break;
+        }
+    }
 }
 
 void Agilent::extractData(){
@@ -44,42 +97,14 @@ void Agilent::extractData(){
 }
 
 void Agilent::readData(){
+    Device::deviceDataSended();
     recvBytes.append(port->readAll());
     extractData();
 }
 
-bool Agilent::startAck(){
-    if(port->portName().isEmpty())
-        return false;
-    if(!port->open(QIODevice::ReadWrite)){
-        emit message(tr("Agilent: Ошибка открытия порта %1").arg(port->portName()),Shared::warning);
-        return false;
-    }
-    if(port->setBaudRate(QSerialPort::Baud9600)&&
-            port->setDataBits(QSerialPort::Data7)&&
-            port->setParity(QSerialPort::EvenParity)&&
-            port->setStopBits(QSerialPort::TwoStop)&&
-            port->setFlowControl(QSerialPort::SoftwareControl))
-    {
-        QTimer::singleShot(2000,this,SLOT(initData()));
-        adcRunning = true;
-        return true;
-    }
-
-    return false;
-}
-
-bool Agilent::stopAck(){
-    if (port->isOpen()){
-        port->write("SYST:LOC\r\n");
-        port->close();
-    }
-    return true;
-}
-
 void Agilent::writeData(){
     port->write("READ?\r\n");
-    emergencyTimer->start(10000);
+    emergencyTimer->start(20000);
 }
 
 void Agilent::initData(){
@@ -89,6 +114,3 @@ void Agilent::initData(){
     QTimer::singleShot(2000,this,SLOT(writeData()));
 }
 
-void Agilent::finalize(){
-    port->close();
-}

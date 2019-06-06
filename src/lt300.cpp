@@ -27,11 +27,7 @@ bool LT300::setSetting(const json &parameters)
 {
     Device::setSetting(parameters);
     channelArray = parameters["channels"];
-    if (port){
-        port->setPortName(parameters["connectionSettings"]["portName"].get<std::string>().c_str());
-        return true;
-    }
-    return false;
+    return true;
 }
 
 bool LT300::start()
@@ -49,17 +45,11 @@ bool LT300::stop()
 bool LT300::connectDevice()
 {
     Device::connectDevice();
-    if(!port || port->portName().isEmpty())
-        return false;
 
-    port->setBaudRate(QSerialPort::Baud4800);
-
-    if(!port->open(QIODevice::ReadWrite)){
-        sendMessage(tr("Ошибка открытия com-порта %1").arg(port->portName()),Shared::critical);
+    if(!openSerialPortSettings(port, parameters_["connectionSettings"])){
         return false;
     }
 
-    port->setRequestToSend(false);
     askTimer->start(500);
     return true;
 }
@@ -127,9 +117,21 @@ void LT300::extractData(){
 }
 
 void LT300::readData(){
+    QByteArray data = port->readAll();
+    if(!verifyRecvData(data))
+        return;
     Device::deviceDataSended();
-    recvBytes.append(port->readAll());
+    recvBytes.append(data);
     extractData();
+}
+
+bool LT300::verifyRecvData(const QByteArray & data)
+{
+    for(auto byte : data)
+        if(byte != 0)
+            return true;
+
+    return false;
 }
 
 

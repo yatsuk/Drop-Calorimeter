@@ -25,11 +25,7 @@ bool Tercon::setSetting(const json &parameters)
 {
     Device::setSetting(parameters);
     channelArray = parameters["channels"];
-    if (port){
-        port->setPortName(parameters["connectionSettings"]["portName"].get<std::string>().c_str());
-        return true;
-    }
-    return false;
+    return true;
 }
 
 bool Tercon::start()
@@ -47,18 +43,7 @@ bool Tercon::stop()
 bool Tercon::connectDevice()
 {
     Device::connectDevice();
-    if(!port || port->portName().isEmpty())
-        return false;
-
-    port->setBaudRate(QSerialPort::Baud9600);
-
-    if(!port->open(QIODevice::ReadOnly)){
-        sendMessage(tr("Ошибка открытия com-порта %1").arg(port->portName()),Shared::critical);
-        return false;
-    }
-
-    port->setRequestToSend(false);
-    return true;
+    return openSerialPortSettings(port, parameters_["connectionSettings"]);
 }
 
 bool Tercon::disconnectDevice()

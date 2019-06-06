@@ -19,7 +19,6 @@
 #include "Devices.h"
 #include "device.h"
 #include "arduino.h"
-#include "agilent.h"
 
 using json = nlohmann::json;
 
@@ -72,7 +71,7 @@ private slots:
     void stopDacDownHeaterChannel();
     void terconDataReceive(TerconData data);
     void receiveData(TerconData data);
-    bool connectTercon();
+    bool connectDevices();
     void saveSettings();
     void loadSettings();
     void saveJSONSettings();
@@ -84,7 +83,6 @@ private:
     DeviceManager * deviceManager;
 
     Arduino * arduino;
-    Agilent * agilent;
 
     Regulator * regulatorOfFurnace;
     Regulator * regulatorOfThermostat;

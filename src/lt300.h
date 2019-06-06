@@ -33,6 +33,7 @@ private slots:
     void askTimerTimeout();
 
 private:
+    bool verifyRecvData(const QByteArray & data);
     QTimer * askTimer;
     QSerialPort * port;
     QByteArray recvBytes;
