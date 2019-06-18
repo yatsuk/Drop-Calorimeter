@@ -21,6 +21,8 @@ Filter * Filter::createFilterFromJSON(const json &parameters)
             filter = new TermocoupleConverter;
         } else if (parameters["type"].get<std::string>()=="MA"){
             filter = new MovingAverage;
+        } else if (parameters["type"].get<std::string>()=="FakeData"){
+            filter = new FakeData;
         }
 
         if (filter){
@@ -310,5 +312,25 @@ double TermocoupleConverter::temperatureToVoltageTypeK (double temperature)
             - 1.2104721275E-26*pow(temperature,9)
             + 1.185976E-1*exp(-1.183432E-4 * pow((temperature - 126.9686),2));
     return volt*1e-3;
+}
+
+
+void FakeData::setParameters(const json &parameters)
+{
+    Filter::setParameters(parameters);
+    value_ = parameters_["settings"]["value"].get<double>();
+}
+
+void FakeData::receive(TerconData data)
+{
+    TerconData newData;
+    newData.time = data.time;
+
+    if(outputDataMap_.contains("fakeValue")){
+        newData.value = value_;
+        newData.id = outputDataMap_["fakeValue"].id;
+        newData.unit = outputDataMap_["fakeValue"].unit;
+        emit dataSend(newData);
+    }
 }
 

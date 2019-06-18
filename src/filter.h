@@ -85,4 +85,17 @@ private:
     bool isSetColdVoltage = false;
 };
 
+class FakeData: public Filter
+{
+
+public:
+    void setParameters(const json &parameters);
+
+protected:
+    virtual void receive(TerconData data);
+
+private:
+    double value_;
+};
+
 #endif // FILTER_H
