@@ -25,52 +25,68 @@ Filter * Filter::createFilterFromJSON(const json &parameters)
 
         if (filter){
             filter->setObjectName(parameters["id"].get<std::string>().c_str());
-            filter->setSetting(parameters);
+            filter->setParameters(parameters);
         }
     }
     return filter;
+}
+
+void Filter::setParameters(const json &parameters)
+{
+    parameters_ = parameters;
+    for(auto & outputDataJson : parameters_["settings"]["outputData"]){
+        OutputData outputData;
+        outputData.id = outputDataJson["id"].get<std::string>().c_str();
+        outputData.name = outputDataJson["name"].get<std::string>().c_str();
+        outputData.unit = outputDataJson["unit"].get<std::string>().c_str();
+        outputDataMap_[outputData.name] = outputData;
+    }
+    OutputData outputData;
+
 }
 
 void Filter::addData(TerconData data)
 {
     for(auto & sourceId : parameters_["settings"]["sourceId"])
         if (QString::compare(sourceId.get<std::string>().c_str(), data.id) == 0)
-            emitData(data);
+            receive(data);
 }
 
-void Filter::emitData(TerconData data)
+
+
+
+
+void MovingAverage::receive(TerconData data)
 {
-    json settings = parameters_["settings"];
     TerconData newData;
-    newData.id = settings["newId"].get<std::string>().c_str();
     newData.time = data.time;
-    bool ok;
-    newData.value = receive(data, &ok);
-    if(!ok)
-        return;
 
-    newData.unit = settings["unit"].get<std::string>().c_str();
-    emit dataSend(newData);
-}
-
-
-
-
-
-
-
-double MovingAverage::receive(TerconData data, bool * ok)
-{
     if (type==Exponential){
-        if(ok)*ok=true;
-        return emaValue(data);
+        if (firstValue_){
+            lastEmaValue = data.value;
+            firstValue_ = false;
+            if(outputDataMap_.contains("emaValue")){
+                newData.id = outputDataMap_["emaValue"].id;
+                newData.unit = outputDataMap_["emaValue"].unit;
+                newData.value = data.value;
+                emit dataSend(newData);
+            }
+        }
+        double ema = alpha*data.value + (1.0 - alpha)*lastEmaValue;
+        lastEmaValue = ema;
+        newData.value = ema;
+        if(outputDataMap_.contains("emaValue")){
+            newData.id = outputDataMap_["emaValue"].id;
+            newData.unit = outputDataMap_["emaValue"].unit;
+            emit dataSend(newData);
+        }
     }
-    if(ok)*ok=false;
-    return 0;
+
 }
 
-void MovingAverage::setSetting(const json &parameters)
+void MovingAverage::setParameters(const json &parameters)
 {
+    Filter::setParameters(parameters);
     json averageSettings = parameters["settings"];
     type = Undef;
     averageCount = 1;
@@ -84,41 +100,67 @@ void MovingAverage::setSetting(const json &parameters)
     firstValue_ = true;
 }
 
-double MovingAverage::emaValue(TerconData newValue)
-{
-    if (firstValue_){
-        lastEmaValue = newValue.value;
-        firstValue_ = false;
 
-        return newValue.value;
+
+
+void TermocoupleConverter::receive(TerconData data)
+{
+    if(!isConstColdTemperature){
+        if(QString::compare(parameters_["settings"]["coldTemperature"].get<std::string>().c_str(), data.id) == 0){
+            if (type==S){
+                coldVoltage = temperatureToVoltageTypeS(data.value);
+                isSetColdVoltage = true;
+            } else if (type==A1){
+                coldVoltage = temperatureToVoltageTypeA1(data.value);
+                isSetColdVoltage = true;
+            } else if (type==K){
+                coldVoltage = temperatureToVoltageTypeK(data.value);
+                isSetColdVoltage = true;
+            }
+            return;
+        }
     }
-    double ema = alpha*newValue.value + (1.0 - alpha)*lastEmaValue;
-    lastEmaValue = ema;
-    return ema;
-}
+
+    if(!isSetColdVoltage && !isConstColdTemperature)return;
 
 
+    TerconData newData;
+    newData.time = data.time;
 
+    if(outputDataMap_.contains("thermocoupleValueMVolt")){
+        newData.value = data.value + coldVoltage;
+        newData.id = outputDataMap_["thermocoupleValueMVolt"].id;
+        newData.unit = outputDataMap_["thermocoupleValueMVolt"].unit;
+        emit dataSend(newData);
+    }
 
-double TermocoupleConverter::receive(TerconData data, bool * ok)
-{
     if (type==S){
-        if(ok)*ok=true;
-        return voltageToTemperatureTypeS(data.value + coldVoltage);
+        if(outputDataMap_.contains("thermocoupleValue")){
+            newData.value = voltageToTemperatureTypeS(data.value + coldVoltage);
+            newData.id = outputDataMap_["thermocoupleValue"].id;
+            newData.unit = outputDataMap_["thermocoupleValue"].unit;
+            emit dataSend(newData);
+        }
     } else if (type==A1){
-        if(ok)*ok=true;
-        return voltageToTemperatureTypeA1(data.value + coldVoltage);
+        if(outputDataMap_.contains("thermocoupleValue")){
+            newData.value = voltageToTemperatureTypeA1(data.value + coldVoltage);
+            newData.id = outputDataMap_["thermocoupleValue"].id;
+            newData.unit = outputDataMap_["thermocoupleValue"].unit;
+            emit dataSend(newData);
+        }
     } else if (type==K){
-        if(ok)*ok=true;
-        return voltageToTemperatureTypeK(data.value + coldVoltage);
+        if(outputDataMap_.contains("thermocoupleValue")){
+            newData.value = voltageToTemperatureTypeK(data.value + coldVoltage);
+            newData.id = outputDataMap_["thermocoupleValue"].id;
+            newData.unit = outputDataMap_["thermocoupleValue"].unit;
+            emit dataSend(newData);
+        }
     }
-
-    if(ok)*ok=false;
-    return 0;
 }
 
-void TermocoupleConverter::setSetting(const json &parameters)
+void TermocoupleConverter::setParameters(const json &parameters)
 {
+    Filter::setParameters(parameters);
     json thermocoupleSettings = parameters["settings"];
     type = Undef;
     coldVoltage = 0;
@@ -141,40 +183,6 @@ void TermocoupleConverter::setSetting(const json &parameters)
     }
 
     parameters_ = parameters;
-}
-
-void TermocoupleConverter::emitData(TerconData data)
-{
-    if(!isConstColdTemperature){
-        if(QString::compare(parameters_["settings"]["coldTemperature"].get<std::string>().c_str(), data.id) == 0){
-            if (type==S){
-                coldVoltage = temperatureToVoltageTypeS(data.value);
-                isSetColdVoltage = true;
-            } else if (type==A1){
-                coldVoltage = temperatureToVoltageTypeA1(data.value);
-                isSetColdVoltage = true;
-            } else if (type==K){
-                coldVoltage = temperatureToVoltageTypeK(data.value);
-                isSetColdVoltage = true;
-            }
-            return;
-        }
-    }
-
-    if(!isSetColdVoltage && !isConstColdTemperature)return;
-
-
-    json settings = parameters_["settings"];
-    TerconData newData;
-    newData.id = settings["newId"].get<std::string>().c_str();
-    newData.time = data.time;
-    bool ok;
-    newData.value = receive(data, &ok);
-    if(!ok)
-        return;
-
-    newData.unit = settings["unit"].get<std::string>().c_str();
-    emit dataSend(newData);
 }
 
 double TermocoupleConverter::voltageToTemperatureTypeA1 (double voltage)

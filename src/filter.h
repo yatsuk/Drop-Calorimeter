@@ -9,11 +9,19 @@
 
 using json = nlohmann::json;
 
+struct OutputData
+{
+    QString id;
+    QString name;
+    double value;
+    QString unit;
+};
+
 class Filter : public QObject
 {
     Q_OBJECT
 public:
-    explicit Filter(QObject *parent = 0);
+    explicit Filter(QObject *parent = nullptr);
     ~Filter();
 
 signals:
@@ -21,28 +29,27 @@ signals:
     void message(const QString & msg, Shared::MessageLevel msgLevel);
 
 public slots:
-    virtual void setSetting(const json &parameters){parameters_ = parameters;}
-    virtual void emitData(TerconData data);
+    virtual void setParameters(const json &parameters);
     virtual json getSetting(){return parameters_;}
     static  Filter * createFilterFromJSON(const json &parameters);
     void addData(TerconData data);
 
 protected:
     json parameters_;
-    virtual double receive(TerconData , bool * ok = 0){return 0;if(ok)*ok=false;}
+    QMap <QString, OutputData> outputDataMap_;
+    virtual void receive(TerconData){}
 };
 
 
 class MovingAverage: public Filter
 {
 public:
-    void setSetting(const json &parameters);
+    void setParameters(const json &parameters);
 
 protected:
-    virtual double receive(TerconData data, bool * ok = 0);
+    virtual void receive(TerconData data);
 
 private:
-    double emaValue(TerconData newValue);
     enum Type {Exponential, Undef};
     Type type;
     int averageCount;
@@ -55,11 +62,10 @@ class TermocoupleConverter: public Filter
 {
 
 public:
-    void setSetting(const json &parameters);
+    void setParameters(const json &parameters);
 
 protected:
-    virtual double receive(TerconData data, bool * ok = nullptr);
-    virtual void emitData(TerconData data);
+    virtual void receive(TerconData data);
 
 private:
     enum Type {A1, S, K, Undef};
