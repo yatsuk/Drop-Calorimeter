@@ -1,5 +1,12 @@
 #include <TimerOne.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
+#define ONE_WIRE_BUS 3
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+DeviceAddress thermometer;
+bool temperatureSensorStop;
 
 
 bool pulse;
@@ -24,6 +31,14 @@ void setup() {
   Timer1.setPeriod(timerPeriod);
   Timer1.stop();
   Timer1.attachInterrupt(timer1Callback);
+
+
+  temperatureSensorStop = false;
+  sensors.getAddress(thermometer, 0); 
+  sensors.begin();
+  sensors.setResolution(12);
+  sensors.setWaitForConversion(true);
+
 }
 
 void timer1Callback()
@@ -92,8 +107,27 @@ void test()
   attachInterrupt(digitalPinToInterrupt(2), irPulse, RISING);
 }
 
+void getValueTemperatureSensor()
+{
+    int i = 0;
+    float sum = 0;
+    float result = 0;
+    unsigned long timeBeginMeas = millis();
+    unsigned int maxTimeMeas = 1500; //milliseconds
+    while((millis() - timeBeginMeas) <= maxTimeMeas){
+      sensors.requestTemperatures();
+      sum+=+sensors.getTempCByIndex(0);
+      i++;
+      if(temperatureSensorStop) return;
+    }
+    result=sum/i;
+    Serial.print("cold_water_temperature: ");
+    Serial.println(result);
+}
+
 void startDetector()
 {
+    temperatureSensorStop = true;
     detectorRunning = true;
     digitalWrite(4, LOW);
     pulseIsHigh = false;
@@ -112,6 +146,7 @@ void stopDetector()
     detectorRunning = false;
     Timer1.stop();
     digitalWrite(4, LOW);
+    temperatureSensorStop = false;
 }
 
 void loop() {
@@ -130,6 +165,9 @@ void loop() {
       digitalWrite(4, LOW);
       test();
       break;
+   case '5': 
+      getValueTemperatureSensor();
+      break;
     }
   }
   if (dropComplited && detectorRunning){
@@ -146,4 +184,3 @@ void loop() {
   }
   delay(1);
 }
-

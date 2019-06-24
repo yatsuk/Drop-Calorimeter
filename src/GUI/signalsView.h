@@ -40,6 +40,8 @@ private:
     QLabel * furnaceInertBlockTemperatureLabel;
     QLabel * sampleTemperatureValueLabel;
     QLabel * furnaceInertBlockTemperatureValueLabel;
+    QLabel * coldWaterTemperatureLabel;
+    QLabel * coldWaterTemperatureValueLabel;
     WidgetRegulatorFurnace * widgetRegulatorFurnace;
     AdditionalHeatersWidget * additionalHeatersWidget;
 };

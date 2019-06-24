@@ -198,6 +198,8 @@ bool Furnace::connectDevices(){
     }
     arduino->setPortName("COM3");
     arduino->startAck();
+    connect(arduino,SIGNAL(dataSend(TerconData)),
+            this,SLOT(terconDataReceive(TerconData)));
     
     return true;
 }

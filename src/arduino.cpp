@@ -8,6 +8,10 @@ Arduino::Arduino(QObject *parent) :
 {
     port = new QSerialPort(this);
     connect(port,SIGNAL(readyRead()),this,SLOT(readData()));
+
+    coldWaterTemperatureTimer = new QTimer(this);
+    coldWaterTemperatureTimer->setInterval(2000);
+    connect(coldWaterTemperatureTimer, &QTimer::timeout, this, &Arduino::getColdWaterTemperature);
 }
 
 Arduino::~Arduino()
@@ -29,10 +33,12 @@ void Arduino::readData(){
 void Arduino::parseArduinoMessage(const QString & msg)
 {
     if (msg.startsWith("drop ok")){
+        coldWaterTemperatureTimer->start();
         emit message(tr("Ампула сброшена."),Shared::information);
         emit message(msg,Shared::information);
         emit droped();
     } else if (msg.startsWith("drop fail")){
+        coldWaterTemperatureTimer->start();
         emit message(tr("Пролет ампулы не зафиксирован."),Shared::critical);
         emit message(msg,Shared::information);
     }else if (msg.startsWith("End test: fail")){
@@ -46,7 +52,17 @@ void Arduino::parseArduinoMessage(const QString & msg)
     } else if (msg == "led_pin, LOW"){
         emit message(tr("Светодиод системы детектирования пролета ампулы выключен."),Shared::information);
     } else if (msg == "Start detector"){
+        coldWaterTemperatureTimer->stop();
         emit message(tr("Ожидание сброса ампулы."),Shared::information);
+    } else if (msg.startsWith("cold_water_temperature:")){
+        int indexSeparator = msg.indexOf(":") + 1;
+        TerconData data;
+        bool isOk = false;
+        data.value = msg.right(msg.length() - indexSeparator).trimmed().toDouble(&isOk);
+        data.id = "{5608ce90-8515-482c-a25b-c5403f715988}";
+        data.unit = "C";
+        if(!isOk)return;
+        emit dataSend(data);
     } else {
         emit message(tr("Arduino message: %1").arg(msg),Shared::information);
     }
@@ -73,6 +89,11 @@ void Arduino::testFotoResistor()
     QTimer::singleShot(5000, this, SLOT(dropSensorIsBroken()));
 }
 
+void Arduino::getColdWaterTemperature()
+{
+    port->write("5");
+}
+
 void Arduino::dropSensorIsBroken()
 {
     if (dropSensorBrokenNotAck)
@@ -93,6 +114,8 @@ bool Arduino::startAck(){
     }
 
     port->setBaudRate(QSerialPort::Baud115200);
+
+    coldWaterTemperatureTimer->start();
     return true;
 }
 

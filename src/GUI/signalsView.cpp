@@ -40,6 +40,17 @@ FurnaceSignalsView::FurnaceSignalsView(QWidget *parent) :
     furnaceInertBlockTemperatureLayout->addStretch(1);
     furnaceInertBlockTemperatureLayout->addWidget(furnaceInertBlockTemperatureValueLabel);
 
+    coldWaterTemperatureLabel = new QLabel;
+    coldWaterTemperatureLabel->hide();
+    coldWaterTemperatureLabel->setText(tr("Температура холодной воды"));
+    coldWaterTemperatureValueLabel = new QLabel;
+    coldWaterTemperatureValueLabel->hide();
+    coldWaterTemperatureValueLabel->setFont(labelValueFont);
+    QHBoxLayout * coldWaterTemperatureLayout = new QHBoxLayout;
+    coldWaterTemperatureLayout->addWidget(coldWaterTemperatureLabel);
+    coldWaterTemperatureLayout->addStretch(1);
+    coldWaterTemperatureLayout->addWidget(coldWaterTemperatureValueLabel);
+
     mainHeater = new HeaterSignalsView(tr("Основной нагреватель"));
     upHeater = new HeaterSignalsView(tr("Верхний нагреватель"));
     downHeater = new HeaterSignalsView(tr("Нижний нагреватель"));
@@ -50,6 +61,7 @@ FurnaceSignalsView::FurnaceSignalsView(QWidget *parent) :
     mainLayout->addWidget(mainHeater);
     mainLayout->addWidget(upHeater);
     mainLayout->addWidget(downHeater);
+    mainLayout->addLayout(coldWaterTemperatureLayout);
     mainLayout->addStretch();
     setLayout(mainLayout);
 
@@ -89,6 +101,15 @@ void FurnaceSignalsView::setTemperature(TerconData terconData)
             sampleTemperatureValueLabel->show();
         }
         sampleTemperatureValueLabel->setText(tr("%1%2С")
+                                             .arg(QString::number(terconData.value,'f',1))
+                                             .arg(QChar(176)));
+    }
+    else if (terconData.id == "{5608ce90-8515-482c-a25b-c5403f715988}"){
+        if (coldWaterTemperatureLabel->isHidden()){
+            coldWaterTemperatureLabel->show();
+            coldWaterTemperatureValueLabel->show();
+        }
+        coldWaterTemperatureValueLabel->setText(tr("%1%2С")
                                              .arg(QString::number(terconData.value,'f',1))
                                              .arg(QChar(176)));
     }
